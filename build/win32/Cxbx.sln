@@ -1,0 +1,38 @@
+Microsoft Visual Studio Solution File, Format Version 8.00
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Cxbe", "Cxbe.vcproj", "{3325F9C7-77A9-4390-9351-DAFE35A94759}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Cxbx", "Cxbx.vcproj", "{B5FD8312-1BF6-4AF6-9773-8D9061A26CAB}"
+	ProjectSection(ProjectDependencies) = postProject
+		{AF9C1D62-BCEB-4B06-993A-011052EA8B6D} = {AF9C1D62-BCEB-4B06-993A-011052EA8B6D}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CxbxKrnl", "CxbxKrnl.vcproj", "{AF9C1D62-BCEB-4B06-993A-011052EA8B6D}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfiguration) = preSolution
+		Debug = Debug
+		Release = Release
+	EndGlobalSection
+	GlobalSection(ProjectConfiguration) = postSolution
+		{3325F9C7-77A9-4390-9351-DAFE35A94759}.Debug.ActiveCfg = Debug|Win32
+		{3325F9C7-77A9-4390-9351-DAFE35A94759}.Debug.Build.0 = Debug|Win32
+		{3325F9C7-77A9-4390-9351-DAFE35A94759}.Release.ActiveCfg = Release|Win32
+		{3325F9C7-77A9-4390-9351-DAFE35A94759}.Release.Build.0 = Release|Win32
+		{B5FD8312-1BF6-4AF6-9773-8D9061A26CAB}.Debug.ActiveCfg = Debug|Win32
+		{B5FD8312-1BF6-4AF6-9773-8D9061A26CAB}.Debug.Build.0 = Debug|Win32
+		{B5FD8312-1BF6-4AF6-9773-8D9061A26CAB}.Release.ActiveCfg = Release|Win32
+		{B5FD8312-1BF6-4AF6-9773-8D9061A26CAB}.Release.Build.0 = Release|Win32
+		{AF9C1D62-BCEB-4B06-993A-011052EA8B6D}.Debug.ActiveCfg = Debug|Win32
+		{AF9C1D62-BCEB-4B06-993A-011052EA8B6D}.Debug.Build.0 = Debug|Win32
+		{AF9C1D62-BCEB-4B06-993A-011052EA8B6D}.Release.ActiveCfg = Release|Win32
+		{AF9C1D62-BCEB-4B06-993A-011052EA8B6D}.Release.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+	EndGlobalSection
+	GlobalSection(ExtensibilityAddIns) = postSolution
+	EndGlobalSection
+EndGlobal
