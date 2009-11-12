@@ -1,0 +1,133 @@
+>> nice code for dumping textures inside of push buffer stuff
+
+            /*
+            IDirect3DBaseTexture8 *pTexture = 0;
+
+            g_pD3DDevice8->GetTexture(0, &pTexture);
+    
+            if(pTexture != NULL)
+            {
+                static int dwDumpTexture = 0;
+
+                char szBuffer[256];
+
+                printf("Texture Time...\n");
+
+                switch(pTexture->GetType())
+                {
+                    case D3DRTYPE_TEXTURE:
+                    {
+                        printf("_TEXTURE\n");
+                        sprintf(szBuffer, "C:\\Aaron\\Textures\\PushBufferTex - %.03d (0x%.08X).bmp", dwDumpTexture++, pTexture);
+
+                        ((IDirect3DTexture8*)pTexture)->UnlockRect(0);
+
+                        D3DXSaveTextureToFile(szBuffer, D3DXIFF_BMP, pTexture, NULL);
+                    }
+                    break;
+
+                    case D3DRTYPE_CUBETEXTURE:
+                    {
+                        printf("_CUBETEXTURE\n");
+                        for(int face=0;face<6;face++)
+                        {
+                            sprintf(szBuffer, "C:\\Aaron\\Textures\\PushBufferTexCube%d - %.03d (0x%.08X).bmp", face, dwDumpTexture++, pTexture);
+
+                            ((IDirect3DCubeTexture8*)pTexture)->UnlockRect((D3DCUBEMAP_FACES)face, 0);
+                            
+                            D3DXSaveTextureToFile(szBuffer, D3DXIFF_BMP, pTexture, NULL);
+                        }
+                    }
+                    break;
+                }
+            }
+            //*/
+
+<<
+
+>>
+
+    /* TODO: Use new handle wrapping code
+
+    // ******************************************************************
+    // * For now, just check for 'special' cases
+    // ******************************************************************
+    if(strcmp(ObjectAttributes->ObjectName->Buffer, "\\Device\\Harddisk0\\partition1\\") == 0)
+    {
+        EmuHandle *iEmuHandle = new EmuHandle;
+
+        iEmuHandle->m_Type = EMUHANDLE_TYPE_PARTITION1;
+
+        *FileHandle = PtrToEmuHandle(iEmuHandle);
+    }
+    else if(strcmp(ObjectAttributes->ObjectName->Buffer, "\\Device\\Harddisk0\\partition1\\TDATA") == 0)
+    {
+        EmuHandle *iEmuHandle = new EmuHandle;
+
+        iEmuHandle->m_Type = EMUHANDLE_TYPE_TDATA;
+
+        *FileHandle = PtrToEmuHandle(iEmuHandle);
+
+        // TODO: Update IoStatusBlock if necessary
+    }
+    else
+    {
+        EmuPanic();
+    }
+    */
+	
+<<
+
+	__asm int 3
+	wchar_t wszObjectName[160];
+
+	xntdll::UNICODE_STRING    NtUnicodeString;
+	xntdll::OBJECT_ATTRIBUTES NtObjAttr;
+
+    setlocale(LC_ALL, "English");
+    mbstowcs(wszObjectName, ObjectAttributes->ObjectName->Buffer, 160);
+
+	NT_RtlInitUnicodeString(&NtUnicodeString, wszObjectName);
+
+	// Initialize NtObjAttr
+	NtObjAttr.Length = sizeof(xntdll::OBJECT_ATTRIBUTES);
+
+	InitializeObjectAttributes(&NtObjAttr, &NtUnicodeString, ObjectAttributes->Attributes, ObjectAttributes->RootDirectory, NULL);
+
+    NTSTATUS ret = NT_NtCreateFile
+    (
+        FileHandle, DesiredAccess, &NtObjAttr, (xntdll::IO_STATUS_BLOCK*)IoStatusBlock,
+        (xntdll::LARGE_INTEGER*)AllocationSize, FileAttributes, ShareAccess, CreateDisposition, CreateOptions, NULL, NULL
+    );
+
+	if(FAILED(ret))
+		MessageBox(g_hEmuWindow, "Bad!", "Cxbx", MB_OK);
+	else
+		MessageBox(g_hEmuWindow, "Good!", "Cxbx", MB_OK);
+
+
+<<
+
+// ******************************************************************
+// * calculate TLS adjustment
+// ******************************************************************
+uint32 TlsAdjust = 0;
+
+if(x_Xbe->m_TLS == 0)
+    TlsAdjust = -1;
+else
+{
+    // ******************************************************************
+    // * necessary tls adjustment values
+    // ******************************************************************
+    uint32 TlsZF = x_Xbe->m_TLS->dwSizeofZeroFill;
+    uint32 TlsEA = x_Xbe->m_TLS->dwDataEndAddr;
+    uint32 TlsSA = x_Xbe->m_TLS->dwDataStartAddr;
+    
+    // ******************************************************************
+    // * calculate tls adjustment
+    // ******************************************************************
+    TlsAdjust  = (TlsZF - TlsSA) + TlsEA + 0x0F;
+    TlsAdjust &= 0xFFFFFFF0;
+    TlsAdjust += 4;
+}
