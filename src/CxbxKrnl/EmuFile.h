@@ -60,6 +60,25 @@ namespace NtDll
 #define EMU_MAX_HANDLES 1024
 
 // ******************************************************************
+// * Various "special" handle types
+// ******************************************************************
+typedef enum _EmuHandleType
+{
+    // Unallocated handle
+    EMUHANDLE_TYPE_EMPTY = 0,
+
+    // Allocated but so far unused handle
+    EMUHANDLE_TYPE_ALLOCATED,
+
+    // File handle with no really special features
+    EMUHANDLE_TYPE_FILE,
+
+    // Fake file/directory/directory object/partition handle
+    EMUHANDLE_TYPE_OBJECT
+}
+EmuHandleType;
+
+// ******************************************************************
 // * Wrapper of a handle object
 // ******************************************************************
 class EmuHandle
@@ -107,25 +126,6 @@ class EmuHandle
         inline static void Lock(void);
         inline static void Unlock(void);
 };
-
-// ******************************************************************
-// * Various "special" handle types
-// ******************************************************************
-typedef enum _EmuHandleType
-{
-    // Unallocated handle
-    EMUHANDLE_TYPE_EMPTY = 0,
-
-    // Allocated but so far unused handle
-    EMUHANDLE_TYPE_ALLOCATED,
-
-    // File handle with no really special features
-    EMUHANDLE_TYPE_FILE,
-
-    // Fake file/directory/directory object/partition handle
-    EMUHANDLE_TYPE_OBJECT
-}
-EmuHandleType;
 
 // ******************************************************************
 // * An NT fake object

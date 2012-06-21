@@ -396,7 +396,7 @@ void *CxbxRtlAllocDebug(HANDLE  Heap,
     void *pRetMem = NULL;
     g_MemoryMutex.Lock();
 
-    void *pMem = NtDll::RtlAllocateHeap(Heap, Flags, Bytes + 2 * sizeof(MEMORY_GUARD));
+    void *pMem = NtDll::_RtlAllocateHeap(Heap, Flags, Bytes + 2 * sizeof(MEMORY_GUARD));
     if(!pMem)
     {
         printf("CxbxRtlAllocDebug: Allocation failed\n"
@@ -461,7 +461,7 @@ BOOL  CxbxRtlFreeDebug(HANDLE Heap,
                    "        Line: %d\n",
                    pFree->pMem, pFree->pFile, pFree->Line, pFile, Line);
         }
-        Ret = NtDll::RtlFreeHeap(Heap, Flags, GetMemStart(pFree));
+        Ret = NtDll::_RtlFreeHeap(Heap, Flags, GetMemStart(pFree));
         free(pFree->pFile);
         free(pFree);
     }
@@ -509,7 +509,7 @@ void *CxbxRtlReallocDebug(HANDLE Heap,
                    pRealloc->pFile, pRealloc->Size, pRealloc->Line,
                    Bytes, pFile, Line);
         }
-        void *pNewMem = NtDll::RtlReAllocateHeap(Heap, Flags, GetMemStart(pRealloc), Bytes + 2 * sizeof(MEMORY_GUARD));
+        void *pNewMem = NtDll::_RtlReAllocateHeap(Heap, Flags, GetMemStart(pRealloc), Bytes + 2 * sizeof(MEMORY_GUARD));
         free(pRealloc->pFile);
         free(pRealloc);
         if(!pNewMem)
@@ -560,7 +560,7 @@ SIZE_T CxbxRtlSizeHeapDebug(HANDLE Heap,
     }
     else
     {
-        SIZE_T ActualSize = NtDll::RtlSizeHeap(Heap, Flags, GetMemStart(pBlock))
+        SIZE_T ActualSize = NtDll::_RtlSizeHeap(Heap, Flags, GetMemStart(pBlock))
                             - 2 * sizeof(MEMORY_GUARD);
         if(ActualSize != pBlock->Size)
         {

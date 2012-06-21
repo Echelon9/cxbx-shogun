@@ -104,6 +104,39 @@ struct XBCtrlObjectCfg
 };
 
 // ******************************************************************
+// * Device Flags
+// ******************************************************************
+#define DEVICE_FLAG_JOYSTICK      (1 << 0)
+#define DEVICE_FLAG_KEYBOARD      (1 << 1)
+#define DEVICE_FLAG_MOUSE         (1 << 2)
+#define DEVICE_FLAG_AXIS          (1 << 3)
+#define DEVICE_FLAG_BUTTON        (1 << 4)
+#define DEVICE_FLAG_POSITIVE      (1 << 5)
+#define DEVICE_FLAG_NEGATIVE      (1 << 6)
+#define DEVICE_FLAG_MOUSE_CLICK   (1 << 7)
+#define DEVICE_FLAG_MOUSE_LX      (1 << 8)
+#define DEVICE_FLAG_MOUSE_LY      (1 << 9)
+#define DEVICE_FLAG_MOUSE_LZ      (1 << 10)
+
+// ******************************************************************
+// * Detection Sensitivity
+// ******************************************************************
+#define DETECT_SENSITIVITY_JOYSTICK 25000
+#define DETECT_SENSITIVITY_BUTTON   0
+#define DETECT_SENSITIVITY_MOUSE    5
+#define DETECT_SENSITIVITY_POV      50000
+
+// ******************************************************************
+// * DirectInput Enumeration Types
+// ******************************************************************
+enum XBCtrlState
+{
+    XBCTRL_STATE_NONE = 0,
+    XBCTRL_STATE_CONFIG,
+    XBCTRL_STATE_LISTEN
+};
+
+// ******************************************************************
 // * class: XBController
 // ******************************************************************
 class XBController : public Error
@@ -223,37 +256,9 @@ class XBController : public Error
 
 };
 
-// ******************************************************************
-// * Device Flags
-// ******************************************************************
-#define DEVICE_FLAG_JOYSTICK      (1 << 0)
-#define DEVICE_FLAG_KEYBOARD      (1 << 1)
-#define DEVICE_FLAG_MOUSE         (1 << 2)
-#define DEVICE_FLAG_AXIS          (1 << 3)
-#define DEVICE_FLAG_BUTTON        (1 << 4)
-#define DEVICE_FLAG_POSITIVE      (1 << 5)
-#define DEVICE_FLAG_NEGATIVE      (1 << 6)
-#define DEVICE_FLAG_MOUSE_CLICK   (1 << 7)
-#define DEVICE_FLAG_MOUSE_LX      (1 << 8)
-#define DEVICE_FLAG_MOUSE_LY      (1 << 9)
-#define DEVICE_FLAG_MOUSE_LZ      (1 << 10)
-
-// ******************************************************************
-// * Detection Sensitivity
-// ******************************************************************
-#define DETECT_SENSITIVITY_JOYSTICK 25000
-#define DETECT_SENSITIVITY_BUTTON   0
-#define DETECT_SENSITIVITY_MOUSE    5
-#define DETECT_SENSITIVITY_POV      50000
-
-// ******************************************************************
-// * DirectInput Enumeration Types
-// ******************************************************************
-enum XBCtrlState
-{
-    XBCTRL_STATE_NONE = 0,
-    XBCTRL_STATE_CONFIG,
-    XBCTRL_STATE_LISTEN
-};
+#ifdef __GNUC__
+BOOL CALLBACK WrapEnumGameCtrlCallback(XTL::LPCDIDEVICEINSTANCE lpddi, LPVOID pvRef);
+BOOL CALLBACK WrapEnumObjectsCallback(XTL::LPCDIDEVICEOBJECTINSTANCE lpddoi, LPVOID pvRef);
+#endif
 
 #endif

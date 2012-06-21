@@ -52,8 +52,13 @@ typedef unsigned char       BYTE;
 typedef unsigned char       BOOLEAN;
 typedef unsigned short      USHORT;
 typedef unsigned short      WORD;
+#if defined(__GNUC__)
+typedef unsigned int        ULONG;
+typedef unsigned int        DWORD;
+#else
 typedef unsigned long       ULONG;
 typedef unsigned long       DWORD;
+#endif
 typedef unsigned long       SIZE_T, *PSIZE_T;
 typedef unsigned long       ACCESS_MASK, *PACCESS_MASK;
 typedef unsigned long       PHYSICAL_ADDRESS;
@@ -65,7 +70,11 @@ typedef int                 BOOL;
 typedef int                 INT;
 typedef unsigned int        UINT;
 typedef unsigned int        *PUINT;
+#if defined(__GNUC__)
+typedef int                 HRESULT;
+#else
 typedef LONG                HRESULT;
+#endif
 
 // ******************************************************************
 // * Pointer types

@@ -56,6 +56,10 @@ namespace NtDll
     #include "EmuNtDll.h"
 };
 
+#ifdef __GNUC__
+#include <seh.h>
+#endif
+
 /*! thread local storage */
 extern CXBXKRNL_API Xbe::TLS *CxbxKrnl_TLS = NULL;
 /*! thread local storage data */
@@ -433,7 +437,11 @@ extern "C" CXBXKRNL_API void CxbxKrnlInit
     // Xbe entry point
     //
 
+#ifdef __GNUC__
+    __seh_try
+#else
     __try
+#endif
     {
         EmuSwapFS();   // XBox FS
 
@@ -466,10 +474,17 @@ extern "C" CXBXKRNL_API void CxbxKrnlInit
 
         EmuSwapFS();   // Win2k/XP FS
     }
+#ifdef __GNUC__
+    __seh_except(EmuException(GetExceptionInformation()))
+#else
     __except(EmuException(GetExceptionInformation()))
+#endif
     {
         printf("Emu: WARNING!! Problem with ExceptionFilter\n");
     }
+#ifdef __GNUC__
+    __seh_end_except
+#endif
 
     DbgPrintf("EmuMain (0x%X): Initial thread ended.\n", GetCurrentThreadId());
 

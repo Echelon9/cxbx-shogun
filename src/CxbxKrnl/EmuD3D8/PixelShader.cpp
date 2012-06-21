@@ -77,6 +77,10 @@
 
 //#include "EmuD3DPixelShader.h"
 
+#ifdef __GNUC__
+#include <seh.h>
+#endif
+
 #define REVEL8N_PIXEL_SAHDER_CHANGES
 
 // help functions
@@ -199,6 +203,7 @@ BOOL bV1R0Reg = FALSE;
 
 HRESULT XTL::CreatePixelShaderFunction(X_D3DPIXELSHADERDEF *pPSD, LPD3DXBUFFER* ppRecompiled)
 {
+#ifndef D3D9
 	char szCode[9000] = {0};
 
 	pCodeBuffer = szCode;
@@ -773,7 +778,11 @@ HRESULT XTL::CreatePixelShaderFunction(X_D3DPIXELSHADERDEF *pPSD, LPD3DXBUFFER* 
 
 	HRESULT hRet = D3D_OK;
 
+#ifdef __GNUC__
+	__seh_try
+#else
 	__try
+#endif
 	{
 		szCode[5] = '4';
 		hRet = D3DXAssembleShader(szCode,
@@ -809,16 +818,26 @@ HRESULT XTL::CreatePixelShaderFunction(X_D3DPIXELSHADERDEF *pPSD, LPD3DXBUFFER* 
 			}
 		}
 	}
+#ifdef __GNUC__
+	__seh_except(EXCEPTION_EXECUTE_HANDLER)
+#else
 	__except(EXCEPTION_EXECUTE_HANDLER)
+#endif
 	{
 		DbgPrintf("Pixel Shader : Exception while creating pixel shader 0x%.8X", pPSD);
 	}
+#ifdef __GNUC__
+	__seh_end_except
+#endif
 	if (pCompilationErrors)
 	{
 		pCompilationErrors->Release();
 	}
 
 	return hRet;
+#else
+    return E_FAIL; //hRet;
+#endif
 }
 
 #define DEF_VAR_TABLE_LEN	7
@@ -881,6 +900,7 @@ inline void HandleInputOutput
 		if(strcmp(szInput[i], "r0")==0)
 		{
 			if(!bR0AWritten)
+
 				strcpy(szInput[i], "t0");
 
 			if(!bR0Written) {
@@ -1190,7 +1210,7 @@ inline void HandleInputOutput
 		BOOL bOptimized = OptimizeOperation(
 			szABOp, 
 			szCDOp, 
-			bVAccess[2] ? "" : szABCDOp, 
+			bVAccess[2] ? (char *)"" : szABCDOp, 
 			szOutputMod, 
 
 #ifdef REVEL8N_PIXEL_SAHDER_CHANGES
@@ -2135,6 +2155,7 @@ inline BOOL OptimizeOperation
 // 						// or  r0 = c2 + t0 * (t1 - c2), but that would mean we have to mul in the ABCD op
 // 						//                               and that is not possible
 // 
+
 // 						for(i=0; i<2; i++)
 // 						{
 // 							// To match the first option, the first input of the AB/CD op must inverted
@@ -2649,7 +2670,7 @@ bool XTL::IsValidPixelShader(void)
  */
 
 // PS Texture Modes
-char* PS_TextureModes[] = 
+const char* PS_TextureModes[] = 
 {
 	"PS_TEXTUREMODES_NONE",						// 0x00
     "PS_TEXTUREMODES_PROJECT2D",				// 0x01
@@ -2686,7 +2707,7 @@ char* PS_TextureModes[] =
 };
 
 // PS DotMapping
-char* PS_DotMapping[] = 
+const char* PS_DotMapping[] = 
 {                            
     "PS_DOTMAPPING_ZERO_TO_ONE",		// 0x00
     "PS_DOTMAPPING_MINUS1_TO_1_D3D",	// 0x01
@@ -2694,11 +2715,13 @@ char* PS_DotMapping[] =
     "PS_DOTMAPPING_MINUS1_TO_1",		// 0x03
     "PS_DOTMAPPING_HILO_1",				// 0x04
     "PS_DOTMAPPING_HILO_HEMISPHERE",	// 0x07
+
 };
 
 // PS CompareMode
-char* PS_CompareMode[] = 
+const char* PS_CompareMode[] = 
 {
+
     "PS_COMPAREMODE_S_LT", // 0x00L
     "PS_COMPAREMODE_S_GE", // 0x01L
 
@@ -2713,7 +2736,7 @@ char* PS_CompareMode[] =
 };
 
 // PS CombinerCountFlags
-char* PS_CombinerCountFlags[] = 
+const char* PS_CombinerCountFlags[] = 
 {
     "PS_COMBINERCOUNT_MUX_LSB",		// 0x0000L, // mux on r0.a lsb
     "PS_COMBINERCOUNT_MUX_MSB",		// 0x0001L, // mux on r0.a msb
@@ -2726,7 +2749,7 @@ char* PS_CombinerCountFlags[] =
 };
 
 // PS InputMapping
-char* PS_InputMapping[] = 
+const char* PS_InputMapping[] = 
 {
     "PS_INPUTMAPPING_UNSIGNED_IDENTITY",	// 0x00L, // max(0,x)         OK for final combiner
     "PS_INPUTMAPPING_UNSIGNED_INVERT",		// 0x20L, // 1 - max(0,x)     OK for final combiner
@@ -2739,7 +2762,7 @@ char* PS_InputMapping[] =
 };
 
 // PS Register
-char* PS_Register[] = 
+const char* PS_Register[] = 
 {
     "PS_REGISTER_ZERO",		// 0x00L, // r
     "PS_REGISTER_DISCARD",	// 0x00L, // w
@@ -2764,7 +2787,7 @@ char* PS_Register[] =
 };
 
 // PS Channel
-char* PS_Channel[] = 
+const char* PS_Channel[] = 
 {
     "PS_CHANNEL_RGB",	// 0x00, // used as RGB source
     "PS_CHANNEL_BLUE",	// 0x00, // used as ALPHA source
@@ -2772,7 +2795,7 @@ char* PS_Channel[] =
 };
 
 // PS FinalCombinerSetting
-char* PS_FinalCombinerSetting[] = 
+const char* PS_FinalCombinerSetting[] = 
 {
     "PS_FINALCOMBINERSETTING_CLAMP_SUM",		// 0x80, // V1+R0 sum clamped to [0,1]
 
@@ -2782,7 +2805,7 @@ char* PS_FinalCombinerSetting[] =
 };
 
 // PS CombineOutput
-char* PS_CombineOutput[] = 
+const char* PS_CombineOutput[] = 
 {
     "PS_COMBINEROUTPUT_IDENTITY",			// 0x00L, // y = x
     "PS_COMBINEROUTPUT_BIAS",				// 0x08L, // y = x - 0.5
@@ -2806,7 +2829,7 @@ char* PS_CombineOutput[] =
 };
 
 // PS GlobalFlags
-char* PS_GlobalFlags[] = 
+const char* PS_GlobalFlags[] = 
 {
 	"PS_GLOBALFLAGS_NO_TEXMODE_ADJUST",     // 0x0000L, // don't adjust texture modes
     "PS_GLOBALFLAGS_TEXMODE_ADJUST",        // 0x0001L, // adjust texture modes according to set texture
@@ -2876,6 +2899,7 @@ void XTL::DumpPixelShaderDefToFile( X_D3DPIXELSHADERDEF* pPSDef, const char* psz
 
 // print relevant contents to the debug console
 void XTL::PrintPixelShaderDefContents( X_D3DPIXELSHADERDEF* pPSDef )
+
 {
 	// Show the contents to the user
 	if( pPSDef )

@@ -107,6 +107,19 @@ void EmuGenerateFS(Xbe::TLS *pTLS, void *pTLSData)
         #endif
     }
 
+#ifdef __GNUC__
+    __asm__ __volatile__(
+        // Obtain "OrgFS"
+        "movw %%fs, %%ax\n\t"
+        "movw %%ax, %0\n\t"
+
+        // Obtain "OrgNtTib"
+        "movl %%fs:0x18, %%eax\n\t"
+        "movl %%eax, %1"
+        : "=m" (OrgFS),
+          "=m" (OrgNtTib)
+    );
+#else
     __asm
     {
         // Obtain "OrgFS"
@@ -117,6 +130,7 @@ void EmuGenerateFS(Xbe::TLS *pTLS, void *pTLSData)
         mov eax, fs:[0x18]
         mov OrgNtTib, eax
     }
+#endif
 
     // allocate LDT entry
     {
@@ -130,6 +144,17 @@ void EmuGenerateFS(Xbe::TLS *pTLS, void *pTLSData)
     }
 
     // update "OrgFS" with NewFS and (bIsXboxFS = false)
+#ifdef __GNUC__
+    __asm__ __volatile__(
+        "movw %0, %%ax\n\t"
+        "movb $0, %%bh\n\t"
+
+        "movw %%ax, %%fs:0x14\n\t"
+        "movb %%bh, %%fs:0x16"
+        :
+        : "m" (NewFS)
+    );
+#else
     __asm
     {
         mov ax, NewFS
@@ -138,6 +163,7 @@ void EmuGenerateFS(Xbe::TLS *pTLS, void *pTLSData)
         mov fs:[0x14], ax
         mov fs:[0x16], bh
     }
+#endif
 
     // generate TIB
     {
@@ -169,6 +195,17 @@ void EmuGenerateFS(Xbe::TLS *pTLS, void *pTLSData)
     EmuSwapFS();
 
     // update "NewFS" with OrgFS and (bIsXboxFS = true)
+#ifdef __GNUC__
+    __asm__ __volatile__(
+        "movw %0, %%ax\n\t"
+        "movb $1, %%bh\n\t"
+
+        "movw %%ax, %%fs:0x14\n\t"
+        "movb %%bh, %%fs:0x16"
+        :
+        : "m" (OrgFS)
+    );
+#else
     __asm
     {
         mov ax, OrgFS
@@ -177,13 +214,23 @@ void EmuGenerateFS(Xbe::TLS *pTLS, void *pTLSData)
         mov fs:[0x14], ax
         mov fs:[0x16], bh
     }
+#endif
 
     // save "TLSPtr" inside NewFS.StackBase
+#ifdef __GNUC__
+    __asm__ __volatile__(
+        "movl %0, %%eax\n\t"
+        "movl %%eax, %%fs:0x04"
+        :
+        : "m" (pNewTLS)
+    );
+#else
     __asm
     {
         mov eax, pNewTLS
         mov fs:[0x04], eax
     }
+#endif
 
     // swap back into the "OrgFS"
     EmuSwapFS();
@@ -196,11 +243,19 @@ void EmuCleanupFS()
 {
     uint16 wSwapFS = 0;
 
+#ifdef __GNUC__
+    __asm__ __volatile__(
+        "movw %%fs:0x14, %%ax\n\t" // FS.ArbitraryUserPointer
+        "movw %%ax, %0"
+        : "=m" (wSwapFS)
+    );
+#else
     __asm
     {
         mov ax, fs:[0x14]   // FS.ArbitraryUserPointer
         mov wSwapFS, ax
     }
+#endif
 
     if(wSwapFS == 0)
         return;
@@ -210,11 +265,19 @@ void EmuCleanupFS()
 
     uint08 *pTLSData = NULL;
 
+#ifdef __GNUC__
+    __asm__ __volatile__(
+        "movl %%fs:0x04, %%eax\n\t"
+        "movl %%eax, %0"
+        : "=m" (pTLSData)
+    );
+#else
     __asm
     {
         mov eax, fs:[0x04]
         mov pTLSData, eax
     }
+#endif
 
     EmuSwapFS(); // Win2k/XP FS
 

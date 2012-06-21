@@ -1,13 +1,13 @@
 //Microsoft Developer Studio generated resource script.
 //
-#include "..\src\CxbxKrnl\ResCxbxDll.h"
+#include "../src/CxbxKrnl/ResCxbxDll.h"
 
 #define APSTUDIO_READONLY_SYMBOLS
 /////////////////////////////////////////////////////////////////////////////
 //
 // Generated from the TEXTINCLUDE 2 resource.
 //
-#include "WinResrc.h"
+#include "winresrc.h"
 
 #ifndef IDC_STATIC
 #define IDC_STATIC -1
@@ -38,7 +38,7 @@ END
 
 2 TEXTINCLUDE DISCARDABLE 
 BEGIN
-    "#include ""WinResrc.h""\r\n"
+    "#include ""winresrc.h""\r\n"
     "\0"
 END
 

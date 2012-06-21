@@ -50,10 +50,15 @@ template <class BaseClass, typename MFT> inline void *MFPtoFP( MFT pMemFunc)
 
     ThisConv.pMemFunc = pMemFunc;
 
-    return ThisConv.pFunc;
+    return (void *)ThisConv.pFunc;
 }
 
+#ifdef __GNUC__
+#define PACK __attribute__((__packed__))
+#else
+#define PACK
 #pragma pack(1)
+#endif
 
 // ******************************************************************
 // * Optimized (Order,Value)-Pair Array
@@ -65,7 +70,7 @@ struct OOVPA
 
     uint08 XRefSaveIndex;
     uint08 XRefCount;
-};
+} PACK;
 
 // ******************************************************************
 // * Large Optimized (Offset,Value)-Pair Array
@@ -83,9 +88,9 @@ template <uint16 COUNT> struct LOOVPA
     {
         uint16 Offset;
         uint08 Value;
-    }
+    } PACK
     Lovp[COUNT];
-};
+} PACK;
 
 // ******************************************************************
 // * Small Optimized (Offset,Value)-Pair Array
@@ -103,9 +108,9 @@ template <uint16 COUNT> struct SOOVPA
     {
         uint08 Offset;
         uint08 Value;
-    }
+    } PACK
     Sovp[COUNT];
-};
+} PACK;
 
 // ******************************************************************
 // * OOVPATable
@@ -119,8 +124,10 @@ struct OOVPATable
     #ifdef _DEBUG_TRACE
     char  *szFuncName;
     #endif
-};
+} PACK;
 
+#ifndef __GNUC__
 #pragma pack()
+#endif
 
 #endif

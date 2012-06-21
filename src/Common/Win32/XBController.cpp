@@ -363,7 +363,7 @@ bool XBController::ConfigPoll(char *szStatus)
             // ******************************************************************
             if(dwHow != -1)
             {
-                char *szDirection = (dwFlags & DEVICE_FLAG_AXIS) ? (dwFlags & DEVICE_FLAG_POSITIVE) ? "Positive " : "Negative " : "";
+                const char *szDirection = (dwFlags & DEVICE_FLAG_AXIS) ? (dwFlags & DEVICE_FLAG_POSITIVE) ? "Positive " : "Negative " : "";
 
                 m_InputDevice[v].m_Device->GetDeviceInfo(&DeviceInstance);
 
@@ -508,8 +508,8 @@ bool XBController::ConfigPoll(char *szStatus)
                 // ******************************************************************
                 if(dwHow != -1)
                 {
-                    char *szDirection = (dwFlags & DEVICE_FLAG_POSITIVE) ? "Positive" : "Negative";
-                    char *szObjName = "Unknown";
+                    const char *szDirection = (dwFlags & DEVICE_FLAG_POSITIVE) ? "Positive" : "Negative";
+                    const char *szObjName = "Unknown";
 
                     ObjectInstance.dwSize = sizeof(ObjectInstance);
 

@@ -40,7 +40,9 @@
 
 #undef FIELD_OFFSET     // prevent macro redefinition warnings
 #include <windows.h>
+#ifndef __GNUC__
 #include <multimon.h>
+#endif
 
 #ifdef __cplusplus
 extern "C" {

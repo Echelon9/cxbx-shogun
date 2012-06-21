@@ -38,7 +38,13 @@
 
 extern "C"
 {
+    #ifndef __WINE__
     #include "jpeglib.h"
+    #else
+    #include <jconfig.h>
+    #define JCONFIG_INCLUDED
+    #include <jpeglib.h>
+    #endif
 }
 
 static void init_source(j_decompress_ptr cinfo)

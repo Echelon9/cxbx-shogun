@@ -166,7 +166,11 @@ XBSYSAPI VOID *RtlMapGenericMask;
 // * in 4-byte blocks, followed by any remaining blocks.
 // *
 // ******************************************************************
+#ifdef __GNUC__
+XBSYSAPI EXPORTNUM(298) VOID (NTAPI *RtlMoveMemory)
+#else
 XBSYSAPI EXPORTNUM(298) VOID NTAPI RtlMoveMemory
+#endif
 (
   IN VOID UNALIGNED       *Destination,
   IN CONST VOID UNALIGNED *Source,
@@ -244,7 +248,11 @@ XBSYSAPI VOID *RtlWalkFrameChain;
 // * Fill a block of memory with zeros.
 // *
 // ******************************************************************
+#ifdef __GNUC__
+XBSYSAPI EXPORTNUM(320) VOID (NTAPI *RtlZeroMemory)
+#else
 XBSYSAPI EXPORTNUM(320) VOID NTAPI RtlZeroMemory
+#endif
 (
   IN VOID UNALIGNED  *Destination,
   IN SIZE_T           Length

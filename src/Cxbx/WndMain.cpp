@@ -277,8 +277,9 @@ LRESULT CALLBACK WndMain::WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lP
                     }
 
                     free(bmpBuff);
-
+#ifndef __GNUC__
                     UnlockResource(hRes);
+#endif
                 }
 
                 m_LogoBmp  = (HBITMAP)LoadImage(m_hInstance, MAKEINTRESOURCE(IDB_LOGO), IMAGE_BITMAP, 0, 0, 0);
@@ -725,7 +726,7 @@ LRESULT CALLBACK WndMain::WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lP
                             {
                                 FILE *logo = fopen(ofn.lpstrFile, "rb");
 
-                                char *bmp_err = 0;
+                                const char *bmp_err = 0;
 
                                 // read bitmap header
                                 if(!bmp_err)
@@ -1652,7 +1653,7 @@ void WndMain::SaveXbeAs()
 
     char filename[260] = "default.xbe";
 
-    SuggestFilename(m_XbeFilename, filename, ".xbe");
+    SuggestFilename(m_XbeFilename, filename, (char *)".xbe");
 
     ofn.lStructSize     = sizeof(OPENFILENAME);
     ofn.hwndOwner       = m_hwnd;
@@ -1764,7 +1765,7 @@ bool WndMain::ConvertToExe(const char *x_filename, bool x_bVerifyIfExists, HWND 
     {
         OPENFILENAME ofn = {0};
 
-        SuggestFilename(m_XbeFilename, filename, ".exe");
+        SuggestFilename(m_XbeFilename, filename, (char *)".exe");
 
         ofn.lStructSize     = sizeof(OPENFILENAME);
         ofn.hwndOwner       = m_hwnd;
@@ -1836,7 +1837,7 @@ void WndMain::StartEmulation(EnumAutoConvert x_AutoConvert, HWND hwndParent)
 
             GetTempPath(259, szTempPath);
 
-            SuggestFilename(m_XbeFilename, szBuffer, ".exe");
+            SuggestFilename(m_XbeFilename, szBuffer, (char *)".exe");
 
             int v=0, c=0;
 
@@ -1854,7 +1855,7 @@ void WndMain::StartEmulation(EnumAutoConvert x_AutoConvert, HWND hwndParent)
         }
         else if(x_AutoConvert == AUTO_CONVERT_XBE_PATH)
         {
-            SuggestFilename(m_XbeFilename, szBuffer, ".exe");
+            SuggestFilename(m_XbeFilename, szBuffer, (char *)".exe");
 
             if(!ConvertToExe(szBuffer, false, hwndParent))
                 return;

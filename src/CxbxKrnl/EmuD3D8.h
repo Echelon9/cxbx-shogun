@@ -64,7 +64,11 @@ HRESULT WINAPI EmuIDirect3D8_CreateDevice
     HWND                        hFocusWindow,
     DWORD                       BehaviorFlags,
     X_D3DPRESENT_PARAMETERS    *pPresentationParameters,
+#ifndef D3D9
     IDirect3DDevice8          **ppReturnedDeviceInterface
+#else
+    IDirect3DDevice9          **ppReturnedDeviceInterface
+#endif
 );
 
 // ******************************************************************
@@ -95,7 +99,11 @@ HRESULT WINAPI EmuIDirect3D8_CheckDeviceFormat
 // ******************************************************************
 VOID WINAPI EmuIDirect3DDevice8_GetDeviceCaps
 (
+#ifndef D3D9
     D3DCAPS8                   *pCaps
+#else
+    D3DCAPS9                   *pCaps
+#endif
 );
 
 // ******************************************************************
@@ -284,7 +292,11 @@ VOID WINAPI EmuIDirect3DDevice8_GetBackBuffer
 // ******************************************************************
 HRESULT WINAPI EmuIDirect3DDevice8_SetViewport
 (
+#ifndef D3D9
     CONST D3DVIEWPORT8 *pViewport
+#else
+    CONST D3DVIEWPORT9 *pViewport
+#endif
 );
 
 // ******************************************************************
@@ -292,7 +304,11 @@ HRESULT WINAPI EmuIDirect3DDevice8_SetViewport
 // ******************************************************************
 HRESULT WINAPI EmuIDirect3DDevice8_GetViewport
 (
+#ifndef D3D9
     D3DVIEWPORT8 *pViewport
+#else
+    D3DVIEWPORT9 *pViewport
+#endif
 );
 
 // ******************************************************************
@@ -1296,7 +1312,11 @@ VOID WINAPI EmuIDirect3DDevice8_DrawIndexedVerticesUP
 HRESULT WINAPI EmuIDirect3DDevice8_SetLight
 (
     DWORD            Index,
+#ifndef D3D9
     CONST D3DLIGHT8 *pLight
+#else
+    CONST D3DLIGHT9 *pLight
+#endif
 );
 
 // ******************************************************************
@@ -1304,7 +1324,11 @@ HRESULT WINAPI EmuIDirect3DDevice8_SetLight
 // ******************************************************************
 HRESULT WINAPI EmuIDirect3DDevice8_SetMaterial
 (
+#ifndef D3D9
     CONST D3DMATERIAL8 *pMaterial
+#else
+    CONST D3DMATERIAL9 *pMaterial
+#endif
 );
 
 // ******************************************************************
@@ -1557,7 +1581,11 @@ HRESULT WINAPI EmuIDirect3D8_GetDeviceCaps
 (
     UINT        Adapter,
     D3DDEVTYPE  DeviceType,
+#ifndef D3D9
     D3DCAPS8    *pCaps
+#else
+    D3DCAPS9    *pCaps
+#endif
 );
 
 // ******************************************************************
@@ -1855,7 +1883,11 @@ HRESULT WINAPI EmuIDirect3DDevice8_GetModelView(D3DXMATRIX* pModelView);
 // ******************************************************************
 // * func: EmuIDirect3DDevice8_SetBackMaterial
 // ******************************************************************
+#ifndef D3D9
 HRESULT WINAPI EmuIDirect3DDevice8_SetBackMaterial(D3DMATERIAL8* pMaterial);
+#else
+HRESULT WINAPI EmuIDirect3DDevice8_SetBackMaterial(D3DMATERIAL9* pMaterial);
+#endif
 
 // ******************************************************************
 // * func: EmuIDirect3D8_GetAdapterIdentifier
@@ -1864,7 +1896,11 @@ HRESULT WINAPI EmuIDirect3D8_GetAdapterIdentifier
 (
 	UINT					Adapter,
 	DWORD					Flags,
+#ifndef D3D9
 	D3DADAPTER_IDENTIFIER8* pIdentifier
+#else
+    D3DADAPTER_IDENTIFIER9* pIdentifier
+#endif
 );
 
 // ******************************************************************

@@ -174,7 +174,7 @@ PVOID WINAPI XTL::EmuRtlCreateHeap
 
     RtlHeapDefinition.Length = sizeof(RtlHeapDefinition);
 
-    PVOID pRet = NtDll::RtlCreateHeap(Flags, Base, Reserve, Commit, Lock, &RtlHeapDefinition);
+    PVOID pRet = NtDll::_RtlCreateHeap(Flags, Base, Reserve, Commit, Lock, &RtlHeapDefinition);
 
     EmuSwapFS();   // XBox FS
 
@@ -1231,7 +1231,7 @@ VOID WINAPI XTL::EmuXRegisterThreadNotifyRoutine
 			// that we don't accidently register the same routine twice!
 			if(g_pfnThreadNotification[i] == NULL)
 			{
-				g_pfnThreadNotification[i] = pThreadNotification->pfnNotifyRoutine;				
+				g_pfnThreadNotification[i] = (void *)pThreadNotification->pfnNotifyRoutine;
 				g_iThreadNotificationCount++;
 				break;
 			}
@@ -1391,6 +1391,19 @@ VOID WINAPI XTL::EmuXapiFiberStartup(DWORD dwDummy)
 
 	void* TlsIndex = (void*) CxbxKrnl_TLS->dwTLSIndexAddr;
 
+#ifdef __GNUC__
+    __asm__ __volatile__(
+        "movl %0, %%eax\n\t"
+        "movl %%fs:4, %%ecx\n\t"
+        "movl (%%ecx,%%eax,4), %%eax\n\t"
+        "movl 8(%%eax), %%eax\n\t"
+        "pushl (%%eax)\n\t"
+        "call *%1"
+        :
+        : "r" (TlsIndex),
+          "r" (func)
+    );
+#else
 	__asm 
 	{
 		mov     eax, TlsIndex
@@ -1400,7 +1413,7 @@ VOID WINAPI XTL::EmuXapiFiberStartup(DWORD dwDummy)
 		push    dword ptr [eax]
 		call    func
 	}
-
+#endif
 }
 
 // ******************************************************************
@@ -1561,7 +1574,11 @@ HANDLE WINAPI XTL::EmuXGetSectionHandleA
 
 	else
 	{
+#ifdef __GNUC__
+        __asm__("int $3");
+#else
 		__asm int 3;
+#endif
 	}
 
 	EmuSwapFS();	// Xbox FS
@@ -1667,7 +1684,7 @@ PVOID WINAPI XTL::EmuRtlDestroyHeap
 			");\n",
 			GetCurrentThreadId(), HeapHandle );
 
-	PVOID pRet = NtDll::RtlDestroyHeap( HeapHandle );
+	PVOID pRet = NtDll::_RtlDestroyHeap( HeapHandle );
 
 	EmuSwapFS();	// Xbox FS
 
@@ -2694,6 +2711,7 @@ BOOL WINAPI XTL::EmuVirtualFree
             GetCurrentThreadId(), lpAddress, dwSize, dwFreeType);
 
 	BOOL bRet = VirtualFreeEx( GetCurrentProcess(), lpAddress, dwSize, dwFreeType );
+
 
 	EmuSwapFS();	// Xbox FS
 

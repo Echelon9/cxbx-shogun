@@ -138,9 +138,10 @@ void XTL::EmuUpdateDeferredStates()
 
         if(XTL::EmuD3DDeferredRenderState[31] != X_D3DRS_UNK)
             g_pD3DDevice8->SetRenderState(D3DRS_POINTSIZE_MAX, XTL::EmuD3DDeferredRenderState[31]);
-
+#ifndef D3D9
         if(XTL::EmuD3DDeferredRenderState[33] != X_D3DRS_UNK)
             g_pD3DDevice8->SetRenderState(D3DRS_PATCHSEGMENTS, XTL::EmuD3DDeferredRenderState[33]);
+#endif
 
         /** To check for unhandled RenderStates
         for(int v=0;v<117-82;v++)
@@ -172,59 +173,86 @@ void XTL::EmuUpdateDeferredStates()
             {
                 if(pCur[0+Adjust2] == 5)
                     CxbxKrnlCleanup("ClampToEdge is unsupported (temporarily)");
-
+#ifndef D3D9
                 g_pD3DDevice8->SetTextureStageState(v, D3DTSS_ADDRESSU, pCur[0+Adjust2]);
+#else
+                g_pD3DDevice8->SetSamplerState(v, D3DSAMP_ADDRESSU, pCur[0+Adjust2]);
+#endif
             }
 
             if(pCur[1+Adjust2] != X_D3DTSS_UNK)
             {
                 if(pCur[1+Adjust2] == 5)
                     CxbxKrnlCleanup("ClampToEdge is unsupported (temporarily)");
-
+#ifndef D3D9
                 g_pD3DDevice8->SetTextureStageState(v, D3DTSS_ADDRESSV, pCur[1+Adjust2]);
+#else
+                g_pD3DDevice8->SetSamplerState(v, D3DSAMP_ADDRESSV, pCur[1+Adjust2]);
+#endif
             }
 
             if(pCur[2+Adjust2] != X_D3DTSS_UNK)
             {
                 if(pCur[2+Adjust2] == 5)
                     CxbxKrnlCleanup("ClampToEdge is unsupported (temporarily)");
-
+#ifndef D3D9
                 g_pD3DDevice8->SetTextureStageState(v, D3DTSS_ADDRESSW, pCur[2+Adjust2]);
+#else
+                g_pD3DDevice8->SetSamplerState(v, D3DSAMP_ADDRESSW, pCur[2+Adjust2]);
+#endif
             }
 
             if(pCur[3+Adjust2] != X_D3DTSS_UNK)
             {
                 if(pCur[3+Adjust2] == 4)
                     CxbxKrnlCleanup("QuinCunx is unsupported (temporarily)");
-
+#ifndef D3D9
                 g_pD3DDevice8->SetTextureStageState(v, D3DTSS_MAGFILTER, pCur[3+Adjust2]);
+#else
+                g_pD3DDevice8->SetSamplerState(v, D3DSAMP_MAGFILTER, pCur[3+Adjust2]);
+#endif
             }
 
             if(pCur[4+Adjust2] != X_D3DTSS_UNK)
             {
                 if(pCur[4+Adjust2] == 4)
                     CxbxKrnlCleanup("QuinCunx is unsupported (temporarily)");
-
+#ifndef D3D9
                 g_pD3DDevice8->SetTextureStageState(v, D3DTSS_MINFILTER, pCur[4+Adjust2]);
+#else
+                g_pD3DDevice8->SetSamplerState(v, D3DSAMP_MINFILTER, pCur[4+Adjust2]);
+#endif
             }
 
             if(pCur[5+Adjust2] != X_D3DTSS_UNK)
             {
                 if(pCur[5+Adjust2] == 4)
                     CxbxKrnlCleanup("QuinCunx is unsupported (temporarily)");
-
+#ifndef D3D9
                 g_pD3DDevice8->SetTextureStageState(v, D3DTSS_MIPFILTER, pCur[5+Adjust2]);
+#else
+                g_pD3DDevice8->SetSamplerState(v, D3DSAMP_MIPFILTER, pCur[5+Adjust2]);
+#endif
             }
 
             if(pCur[6+Adjust2] != X_D3DTSS_UNK)
+#ifndef D3D9
                 g_pD3DDevice8->SetTextureStageState(v, D3DTSS_MIPMAPLODBIAS, pCur[6+Adjust2]);
-
+#else
+                g_pD3DDevice8->SetSamplerState(v, D3DSAMP_MIPMAPLODBIAS, pCur[6+Adjust2]);
+#endif
             if(pCur[7+Adjust2] != X_D3DTSS_UNK)
+#ifndef D3D9
                 g_pD3DDevice8->SetTextureStageState(v, D3DTSS_MAXMIPLEVEL, pCur[7+Adjust2]);
-
+#else
+                g_pD3DDevice8->SetSamplerState(v, D3DSAMP_MAXMIPLEVEL, pCur[7+Adjust2]);
+#endif
             if(pCur[8+Adjust2] != X_D3DTSS_UNK)
+#ifndef D3D9
                 g_pD3DDevice8->SetTextureStageState(v, D3DTSS_MAXANISOTROPY, pCur[8+Adjust2]);
-
+#else
+                g_pD3DDevice8->SetSamplerState(v, D3DSAMP_MAXANISOTROPY, pCur[8+Adjust2]);
+#endif
             // TODO: Use a lookup table, this is not always a 1:1 map
             if(pCur[12-Adjust1] != X_D3DTSS_UNK)
             {
@@ -322,8 +350,11 @@ void XTL::EmuUpdateDeferredStates()
         {
             // pCur = Texture Stage 3 States
             ::DWORD *pCur = &EmuD3DDeferredTextureState[2*32];
-
+#ifndef D3D9
             IDirect3DBaseTexture8 *pTexture;
+#else
+            IDirect3DBaseTexture9 *pTexture;
+#endif
 
             // set the point sprites texture
             g_pD3DDevice8->GetTexture(3, &pTexture);

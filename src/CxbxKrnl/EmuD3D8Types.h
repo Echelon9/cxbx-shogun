@@ -34,11 +34,16 @@
 #ifndef EMUD3D8TYPES_H
 #define EMUD3D8TYPES_H
 
-// include direct3d 8x headers
+// include direct3d headers
+#ifdef D3D9
+#define DIRECT3D_VERSION 0x0900
+#include <d3dx9.h>
+#else
 #define DIRECT3D_VERSION 0x0800
 #include <d3d8.h>
 #include <d3dx8tex.h>
 #include <d3d8types.h>
+#endif
 
 // TODO: fill out these enumeration tables for convienance
 typedef DWORD X_D3DFORMAT;
@@ -125,8 +130,13 @@ typedef struct _X_D3DPRESENT_PARAMETERS
     DWORD               Flags;
     UINT                FullScreen_RefreshRateInHz;
     UINT                FullScreen_PresentationInterval;
+#ifndef D3D9
     IDirect3DSurface8  *BufferSurfaces[3];
     IDirect3DSurface8  *DepthStencilSurface;
+#else
+    IDirect3DSurface9  *BufferSurfaces[3];
+    IDirect3DSurface9  *DepthStencilSurface;
+#endif
 }
 X_D3DPRESENT_PARAMETERS;
 
@@ -240,6 +250,7 @@ struct X_D3DResource
     union
     {
         DWORD                    Lock;
+#ifndef D3D9
         IDirect3DResource8      *EmuResource8;
         IDirect3DBaseTexture8   *EmuBaseTexture8;
         IDirect3DTexture8       *EmuTexture8;
@@ -248,6 +259,16 @@ struct X_D3DResource
         IDirect3DSurface8       *EmuSurface8;
         IDirect3DVertexBuffer8  *EmuVertexBuffer8;
         IDirect3DIndexBuffer8   *EmuIndexBuffer8;
+#else
+        IDirect3DResource9      *EmuResource8;
+        IDirect3DBaseTexture9   *EmuBaseTexture8;
+        IDirect3DTexture9       *EmuTexture8;
+        IDirect3DVolumeTexture9 *EmuVolumeTexture8;
+        IDirect3DCubeTexture9   *EmuCubeTexture8;
+        IDirect3DSurface9       *EmuSurface8;
+        IDirect3DVertexBuffer9  *EmuVertexBuffer8;
+        IDirect3DIndexBuffer9   *EmuIndexBuffer8;
+#endif
     };
 };
 

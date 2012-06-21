@@ -38,7 +38,9 @@
 
 #undef FIELD_OFFSET     // prevent macro redefinition warnings
 #include <windows.h>
+#ifndef __GNUC__
 #include <multimon.h>
+#endif
 
 // print out a warning message to the kernel debug log file
 #ifdef _DEBUG_WARNINGS

@@ -128,8 +128,9 @@ LRESULT CALLBACK WndAbout::WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM l
                 }
 
                 free(bmpBuff);
-
+#ifndef __GNUC__
                 UnlockResource(hRes);
+#endif
             }
 
             m_BackDC  = CreateCompatibleDC(hDC);

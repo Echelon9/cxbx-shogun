@@ -20,8 +20,12 @@ extern "C"
 // ******************************************************************
 // * dll import/export
 // ******************************************************************
+#ifndef DECLSPEC_IMPORT
 #define DECLSPEC_IMPORT __declspec(dllimport)
+#endif
+#ifndef DECLSPEC_EXPORT
 #define DECLSPEC_EXPORT __declspec(dllexport)
+#endif
 
 // ******************************************************************
 // * kernel exports, others either import or link locally
@@ -83,6 +87,9 @@ typedef unsigned long       SIZE_T, *PSIZE_T;
 typedef unsigned long       ACCESS_MASK, *PACCESS_MASK;
 typedef unsigned long       PHYSICAL_ADDRESS;
 typedef long                INT_PTR;
+#if defined(__GNUC__) && !defined(__int64)
+#define __int64 long long
+#endif
 typedef signed __int64      LONGLONG;
 typedef unsigned __int64    ULONGLONG;
 typedef unsigned short      WCHAR;
@@ -128,7 +135,9 @@ typedef long                            NTSTATUS;
 #define STATUS_NO_MEMORY                 ((DWORD   )0xC0000017L)
 #endif
 #define STATUS_ALERTED                   ((DWORD   )0x00000101)
+#ifndef STATUS_USER_APC
 #define STATUS_USER_APC                  ((DWORD   )0x000000C0L)
+#endif
 // The SCSI input buffer was too large (not necessarily an error!)
 #define STATUS_DATA_OVERRUN              ((DWORD   )0xC000003CL)
 #define STATUS_INVALID_IMAGE_FORMAT      ((DWORD   )0xC000007BL)
@@ -157,10 +166,24 @@ typedef long                            NTSTATUS;
 // ******************************************************************
 // * calling conventions
 // ******************************************************************
+#ifdef __GNUC__
+#ifndef __stdcall
+#define __stdcall           __attribute__((__stdcall__))
+#endif
+#ifndef _cdecl
+#define _cdecl              __attribute__((__cdecl__))
+#endif
+#endif
 #define NTAPI               __stdcall
 #define CDECL               __cdecl
 #define INLINE              __inline
+#ifndef DECLSPEC_NORETURN
+#ifdef __GNUC__
+#define DECLSPEC_NORETURN   __attribute__((__noreturn__))
+#else
 #define DECLSPEC_NORETURN   __declspec(noreturn)
+#endif
+#endif
 
 // ******************************************************************
 // * documentation purposes only
@@ -576,7 +599,9 @@ typedef struct _PCI_COMMON_CONFIG
 }
 PCI_COMMON_CONFIG, *PPCI_COMMON_CONFIG;
 
+#ifndef FIELD_OFFSET
 #define FIELD_OFFSET(type, field)    ((LONG)(LONG_PTR)&(((type *)0)->field))
+#endif
 
 #define PCI_COMMON_HDR_LENGTH (FIELD_OFFSET (PCI_COMMON_CONFIG, DeviceSpecific))
 
@@ -905,6 +930,18 @@ INLINE static ULONG READ_REGISTER_ULONG(PULONG Address)
 // ******************************************************************
 static VOID WRITE_REGISTER_UCHAR(PVOID Address, UCHAR Value)
 {
+#ifdef __GNUC__
+    __asm__(
+        "movl %1, %%edx\n\t"
+        "movb %2, %%ah\n\t"
+        "movb %%ah, (%%edx)\n\t"
+        "lock\n\t"
+        "or %%edx, %0"
+        : "=r" (Address)
+        : "0" (Address),
+          "r" (Value)
+    );
+#else
     __asm
     {
         mov edx, Address
@@ -912,6 +949,7 @@ static VOID WRITE_REGISTER_UCHAR(PVOID Address, UCHAR Value)
         mov [edx], ah
         lock or Address, edx
     };
+#endif
 }
 
 // ******************************************************************
@@ -925,6 +963,18 @@ static VOID WRITE_REGISTER_UCHAR(PVOID Address, UCHAR Value)
 // ******************************************************************
 static VOID WRITE_REGISTER_USHORT(PVOID Address, USHORT Value)
 {
+#ifdef __GNUC__
+    __asm__(
+        "movl %1, %%edx\n\t"
+        "movw %2, %%ax\n\t"
+        "movw %%ax, (%%edx)\n\t"
+        "lock\n\t"
+        "or %%edx, %0"
+        : "=r" (Address)
+        : "0" (Address),
+          "r" (Value)
+    );
+#else
     __asm
     {
         mov edx, Address
@@ -932,6 +982,7 @@ static VOID WRITE_REGISTER_USHORT(PVOID Address, USHORT Value)
         mov [edx], ax
         lock or Address, edx
     };
+#endif
 }
 
 // ******************************************************************
@@ -945,6 +996,18 @@ static VOID WRITE_REGISTER_USHORT(PVOID Address, USHORT Value)
 // ******************************************************************
 static VOID WRITE_REGISTER_ULONG(PVOID Address, ULONG Value)
 {
+#ifdef __GNUC__
+    __asm__(
+        "movl %1, %%edx\n\t"
+        "movl %2, %%eax\n\t"
+        "movl %%eax, (%%edx)\n\t"
+        "lock\n\t"
+        "or %%edx, %0"
+        : "=r" (Address)
+        : "0" (Address),
+          "r" (Value)
+    );
+#else
     __asm
     {
         mov edx, Address
@@ -952,6 +1015,7 @@ static VOID WRITE_REGISTER_ULONG(PVOID Address, ULONG Value)
         mov [edx], eax
         lock or Address, edx
     };
+#endif
 }
 
 // ******************************************************************

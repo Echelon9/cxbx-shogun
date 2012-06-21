@@ -63,6 +63,10 @@ namespace NtDll
 #include <ntstatus.h>
 #pragma warning(default:4005)
 
+#ifdef __GNUC__
+#include <seh.h>
+#endif
+
 // PsCreateSystemThread proxy parameters
 typedef struct _PCSTProxyParam
 {
@@ -172,12 +176,31 @@ static unsigned int WINAPI PCSTProxy
     }
 
     // use the special calling convention
+#ifdef __GNUC__
+    __seh_try
+#else
     __try
+#endif
     {
         SetEvent(iPCSTProxyParam->hStartedEvent);
 
         EmuSwapFS();   // Xbox FS
 
+#ifdef __GNUC__
+        __asm__ __volatile__(
+            "movl %0, %%esi\n\t"
+            "pushl %1\n\t"
+            "pushl %2\n\t"
+            "pushl %3\n\t"
+            "leal -4(%%esp), %%ebp\n\t"
+            "jmp *%%esi"
+            :
+            : "m" (StartRoutine),
+              "m" (StartContext2),
+              "m" (StartContext1),
+              "r" (&&callComplete)
+        );
+#else
         __asm
         {
             mov         esi, StartRoutine
@@ -187,11 +210,19 @@ static unsigned int WINAPI PCSTProxy
             lea         ebp, [esp-4]
             jmp near    esi
         }
+#endif
     }
+#ifdef __GNUC__
+    __seh_except(EmuException(GetExceptionInformation()))
+#else
     __except(EmuException(GetExceptionInformation()))
+#endif
     {
         EmuWarning("Problem with ExceptionFilter!");
     }
+#ifdef __GNUC__
+    __seh_end_except
+#endif
 
 callComplete:
 
@@ -235,7 +266,11 @@ XBSYSAPI EXPORTNUM(1) xboxkrnl::PVOID NTAPI xboxkrnl::AvGetSavedDataAddress()
 
 	DbgPrintf("EmuKrnl (0x%X): AvGetSavedDataAddress();\n", GetCurrentThreadId() );
 
+#ifdef __GNUC__
+    __asm__("int $3");
+#else
 	__asm int 3;
+#endif
 
 	// Allocate a buffer the size of the screen buffer and return that.
 	// TODO: Fill this buffer with the contents of the front buffer.
@@ -794,7 +829,7 @@ XBSYSAPI EXPORTNUM(99) xboxkrnl::NTSTATUS NTAPI xboxkrnl::KeDelayExecutionThread
            ");\n",
            GetCurrentThreadId(), WaitMode, Alertable, Interval, Interval == 0 ? 0 : Interval->QuadPart);
 
-    NTSTATUS ret = NtDll::NtDelayExecution(Alertable, (NtDll::LARGE_INTEGER*)Interval);
+    NTSTATUS ret = NtDll::_NtDelayExecution(Alertable, (NtDll::LARGE_INTEGER*)Interval);
 
     EmuSwapFS();   // Xbox FS
 
@@ -972,7 +1007,11 @@ XBSYSAPI EXPORTNUM(149) xboxkrnl::BOOLEAN NTAPI xboxkrnl::KeSetTimer
 
     // Call KeSetTimerEx
 //    KeSetTimerEx(Timer, DueTime, 0, Dpc);
+#ifdef __GNUC__
+    __asm__("int $3");
+#else
 	__asm int 3;
+#endif
 	CxbxKrnlCleanup("KeSetTimer is not implemented!");
 
     EmuSwapFS();   // Xbox FS
@@ -1223,7 +1262,7 @@ XBSYSAPI EXPORTNUM(169) xboxkrnl::PVOID NTAPI xboxkrnl::MmCreateKernelStack
 	/*__asm int 3;
 	CxbxKrnlCleanup( "MmCreateKernelStack unimplemented (check call stack)" );*/
 	NtDll::PVOID pRet = NULL;
-	if(FAILED(NtDll::NtAllocateVirtualMemory(GetCurrentProcess(), &pRet, 0, &NumberOfBytes, MEM_COMMIT, PAGE_READWRITE)))
+	if(FAILED(NtDll::_NtAllocateVirtualMemory(GetCurrentProcess(), &pRet, 0, &NumberOfBytes, MEM_COMMIT, PAGE_READWRITE)))
 	    EmuWarning("MmCreateKernelStack failed!\n");
 	else
 		pRet = (PVOID)((ULONG)pRet + NumberOfBytes);
@@ -1254,7 +1293,7 @@ XBSYSAPI EXPORTNUM(170) VOID NTAPI xboxkrnl::MmDeleteKernelStack
    /* __asm int 3;
 	CxbxKrnlCleanup( "MmDeleteKernelStack unimplemented (check call stack)" );*/
 	ULONG RegionSize = 0;
-    if (FAILED(NtDll::NtFreeVirtualMemory(GetCurrentProcess(), &BaseAddress, &RegionSize, MEM_RELEASE)))
+    if (FAILED(NtDll::_NtFreeVirtualMemory(GetCurrentProcess(), &BaseAddress, &RegionSize, MEM_RELEASE)))
         EmuWarning("MmDeleteKernelStack failed!\n");
 
     EmuSwapFS();   // Xbox FS
@@ -1353,7 +1392,7 @@ XBSYSAPI EXPORTNUM(178) VOID NTAPI xboxkrnl::MmPersistContiguousMemory
 // ******************************************************************
 // * 0x00B4 - MmQueryAllocationSize
 // ******************************************************************
-XBSYSAPI EXPORTNUM(180) XTL::ULONG NTAPI xboxkrnl::MmQueryAllocationSize
+XBSYSAPI EXPORTNUM(180) xboxkrnl::ULONG NTAPI xboxkrnl::MmQueryAllocationSize
 (
     IN PVOID   BaseAddress
 )
@@ -1484,7 +1523,7 @@ XBSYSAPI EXPORTNUM(184) xboxkrnl::NTSTATUS NTAPI xboxkrnl::NtAllocateVirtualMemo
 		AllocationType &= ~MEM_NOZERO;
 	}
 
-    NTSTATUS ret = NtDll::NtAllocateVirtualMemory(GetCurrentProcess(), BaseAddress, ZeroBits, AllocationSize, AllocationType, Protect);
+    NTSTATUS ret = NtDll::_NtAllocateVirtualMemory(GetCurrentProcess(), BaseAddress, ZeroBits, AllocationSize, AllocationType, Protect);
 	if( ret == 0xC00000F3 )
 		EmuWarning( "Invalid Param!" );
 
@@ -1509,7 +1548,7 @@ XBSYSAPI EXPORTNUM(186) xboxkrnl::NTSTATUS NTAPI xboxkrnl::NtClearEvent
            ");\n",
            GetCurrentThreadId(), EventHandle);
 
-    NTSTATUS ret = NtDll::NtClearEvent(EventHandle);
+    NTSTATUS ret = NtDll::_NtClearEvent(EventHandle);
 
     if(FAILED(ret))
         EmuWarning("NtClearEvent Failed!");
@@ -1549,7 +1588,7 @@ XBSYSAPI EXPORTNUM(187) xboxkrnl::NTSTATUS NTAPI xboxkrnl::NtClose
     // close normal handles
     else
     {
-        ret = NtDll::NtClose(Handle);
+        ret = NtDll::_NtClose(Handle);
     }
 
     EmuSwapFS();   // Xbox FS
@@ -1593,7 +1632,7 @@ XBSYSAPI EXPORTNUM(189) xboxkrnl::NTSTATUS NTAPI xboxkrnl::NtCreateEvent
         mbstowcs(wszObjectName, "\\??\\", 4);
         mbstowcs(wszObjectName+4, szBuffer, 160);
 
-        NtDll::RtlInitUnicodeString(&NtUnicodeString, wszObjectName);
+        NtDll::_RtlInitUnicodeString(&NtUnicodeString, wszObjectName);
 
         InitializeObjectAttributes(&NtObjAttr, &NtUnicodeString, ObjectAttributes->Attributes, ObjectAttributes->RootDirectory, NULL);
     }
@@ -1601,7 +1640,7 @@ XBSYSAPI EXPORTNUM(189) xboxkrnl::NTSTATUS NTAPI xboxkrnl::NtCreateEvent
     NtObjAttr.RootDirectory = 0;
 
     // redirect to NtCreateEvent
-    NTSTATUS ret = NtDll::NtCreateEvent(EventHandle, EVENT_ALL_ACCESS, (szBuffer != 0) ? &NtObjAttr : 0, (NtDll::EVENT_TYPE)EventType, InitialState);
+    NTSTATUS ret = NtDll::_NtCreateEvent(EventHandle, EVENT_ALL_ACCESS, (szBuffer != 0) ? &NtObjAttr : 0, (NtDll::EVENT_TYPE)EventType, InitialState);
 
     if(FAILED(ret))
         EmuWarning("NtCreateEvent Failed!");
@@ -1757,12 +1796,12 @@ XBSYSAPI EXPORTNUM(190) xboxkrnl::NTSTATUS NTAPI xboxkrnl::NtCreateFile
         wszObjectName[0] = L'\0';
     }
 
-    NtDll::RtlInitUnicodeString(&NtUnicodeString, wszObjectName);
+    NtDll::_RtlInitUnicodeString(&NtUnicodeString, wszObjectName);
 
     InitializeObjectAttributes(&NtObjAttr, &NtUnicodeString, ObjectAttributes->Attributes, ObjectAttributes->RootDirectory, NULL);
 
     // redirect to NtCreateFile
-    NTSTATUS ret = NtDll::NtCreateFile
+    NTSTATUS ret = NtDll::_NtCreateFile
     (
         FileHandle, DesiredAccess, &NtObjAttr, (NtDll::IO_STATUS_BLOCK*)IoStatusBlock,
         (NtDll::LARGE_INTEGER*)AllocationSize, FileAttributes, ShareAccess, CreateDisposition, CreateOptions, NULL, NULL
@@ -1801,9 +1840,9 @@ XBSYSAPI EXPORTNUM(190) xboxkrnl::NTSTATUS NTAPI xboxkrnl::NtCreateFile
         DbgPrintf("  New:\"$CurRoot\\%s\"\n", szBuffer);
 
         mbstowcs(wszObjectName, szBuffer, 160);
-        NtDll::RtlInitUnicodeString(&NtUnicodeString, wszObjectName);
+        NtDll::_RtlInitUnicodeString(&NtUnicodeString, wszObjectName);
 
-        ret = NtDll::NtCreateFile
+        ret = NtDll::_NtCreateFile
         (
             FileHandle, DesiredAccess, &NtObjAttr, (NtDll::IO_STATUS_BLOCK*)IoStatusBlock,
             (NtDll::LARGE_INTEGER*)AllocationSize, FileAttributes, ShareAccess, CreateDisposition, CreateOptions, NULL, NULL
@@ -1866,7 +1905,7 @@ XBSYSAPI EXPORTNUM(192) xboxkrnl::NTSTATUS NTAPI xboxkrnl::NtCreateMutant
         mbstowcs(wszObjectName, "\\??\\", 4);
         mbstowcs(wszObjectName+4, szBuffer, 160);
 
-        NtDll::RtlInitUnicodeString(&NtUnicodeString, wszObjectName);
+        NtDll::_RtlInitUnicodeString(&NtUnicodeString, wszObjectName);
 
         InitializeObjectAttributes(&NtObjAttr, &NtUnicodeString, ObjectAttributes->Attributes, ObjectAttributes->RootDirectory, NULL);
     }
@@ -1874,7 +1913,11 @@ XBSYSAPI EXPORTNUM(192) xboxkrnl::NTSTATUS NTAPI xboxkrnl::NtCreateMutant
     NtObjAttr.RootDirectory = 0;
 
     // redirect to NtCreateMutant
-    NTSTATUS ret = NtDll::NtCreateMutant(MutantHandle, MUTANT_ALL_ACCESS, (szBuffer != 0) ? &NtObjAttr : 0, InitialOwner);
+#ifdef __GNUC__
+    NTSTATUS ret = NtDll::_NtCreateMutant(MutantHandle, MUTEX_ALL_ACCESS, (szBuffer != 0) ? &NtObjAttr : 0, InitialOwner);
+#else
+    NTSTATUS ret = NtDll::_NtCreateMutant(MutantHandle, MUTANT_ALL_ACCESS, (szBuffer != 0) ? &NtObjAttr : 0, InitialOwner);
+#endif
 
     if(FAILED(ret))
         EmuWarning("NtCreateMutant Failed!");
@@ -1910,7 +1953,7 @@ XBSYSAPI EXPORTNUM(193) xboxkrnl::NTSTATUS NTAPI xboxkrnl::NtCreateSemaphore
            InitialCount, MaximumCount);
 
     // redirect to Win2k/XP
-    NTSTATUS ret = NtDll::NtCreateSemaphore
+    NTSTATUS ret = NtDll::_NtCreateSemaphore
     (
         SemaphoreHandle,
         SEMAPHORE_ALL_ACCESS,
@@ -1950,7 +1993,7 @@ XBSYSAPI EXPORTNUM(197) xboxkrnl::NTSTATUS NTAPI xboxkrnl::NtDuplicateObject
            GetCurrentThreadId(), SourceHandle, TargetHandle, Options);
 
     // redirect to Win2k/XP
-    NTSTATUS ret = NtDll::NtDuplicateObject
+    NTSTATUS ret = NtDll::_NtDuplicateObject
     (
         GetCurrentProcess(),
         SourceHandle,
@@ -1985,7 +2028,7 @@ XBSYSAPI EXPORTNUM(198) xboxkrnl::NTSTATUS NTAPI xboxkrnl::NtFlushBuffersFile
            ");\n",
            GetCurrentThreadId(), FileHandle, IoStatusBlock);
 
-    NTSTATUS ret = NtDll::NtFlushBuffersFile(FileHandle, (NtDll::IO_STATUS_BLOCK*)IoStatusBlock);
+    NTSTATUS ret = NtDll::_NtFlushBuffersFile(FileHandle, (NtDll::IO_STATUS_BLOCK*)IoStatusBlock);
 
     EmuSwapFS();   // Xbox FS
 
@@ -2012,7 +2055,7 @@ XBSYSAPI EXPORTNUM(199) xboxkrnl::NTSTATUS NTAPI xboxkrnl::NtFreeVirtualMemory
            ");\n",
            GetCurrentThreadId(), BaseAddress, FreeSize, FreeType);
 
-    NTSTATUS ret = NtDll::NtFreeVirtualMemory(GetCurrentProcess(), BaseAddress, FreeSize, FreeType);
+    NTSTATUS ret = NtDll::_NtFreeVirtualMemory(GetCurrentProcess(), BaseAddress, FreeSize, FreeType);
 
     EmuSwapFS();   // Xbox FS
 
@@ -2085,7 +2128,7 @@ XBSYSAPI EXPORTNUM(206) xboxkrnl::NTSTATUS NTAPI xboxkrnl::NtQueueApcThread
 
 	// TODO: Not too sure how this one works.  If there's any special *magic* that needs to be
 	//		 done, let me know!
-	ret = NtDll::NtQueueApcThread( (NtDll::HANDLE) ThreadHandle, (NtDll::PIO_APC_ROUTINE) ApcRoutine, ApcRoutineContext, 
+	ret = NtDll::_NtQueueApcThread( (NtDll::HANDLE) ThreadHandle, (NtDll::PIO_APC_ROUTINE) ApcRoutine, ApcRoutineContext, 
 									(NtDll::PIO_STATUS_BLOCK) ApcStatusBlock, ApcReserved );
 	if( FAILED( ret ) )
 		EmuWarning( "NtQueueApcThread failed!" );
@@ -2147,7 +2190,7 @@ XBSYSAPI EXPORTNUM(207) xboxkrnl::NTSTATUS NTAPI xboxkrnl::NtQueryDirectoryFile
         else
             mbstowcs(wszObjectName, "", 160);
 
-        NtDll::RtlInitUnicodeString(&NtFileMask, wszObjectName);
+        NtDll::_RtlInitUnicodeString(&NtFileMask, wszObjectName);
     }
 
     NtDll::FILE_DIRECTORY_INFORMATION *FileDirInfo = (NtDll::FILE_DIRECTORY_INFORMATION*)CxbxMalloc(0x40 + 160*2);
@@ -2159,7 +2202,7 @@ XBSYSAPI EXPORTNUM(207) xboxkrnl::NTSTATUS NTAPI xboxkrnl::NtQueryDirectoryFile
     {
         ZeroMemory(wcstr, 160*2);
 
-        ret = NtDll::NtQueryDirectoryFile
+        ret = NtDll::_NtQueryDirectoryFile
         (
             FileHandle, Event, (NtDll::PIO_APC_ROUTINE)ApcRoutine, ApcContext, (NtDll::IO_STATUS_BLOCK*)IoStatusBlock, FileDirInfo,
             0x40+160*2, (NtDll::FILE_INFORMATION_CLASS)FileInformationClass, TRUE, &NtFileMask, RestartScan
@@ -2229,12 +2272,12 @@ XBSYSAPI EXPORTNUM(210) xboxkrnl::NTSTATUS NTAPI xboxkrnl::NtQueryFullAttributes
     {
         mbstowcs(wszObjectName, szBuffer, 160);
 
-        NtDll::RtlInitUnicodeString(&NtUnicodeString, wszObjectName);
+        NtDll::_RtlInitUnicodeString(&NtUnicodeString, wszObjectName);
 
         InitializeObjectAttributes(&NtObjAttr, &NtUnicodeString, ObjectAttributes->Attributes, ObjectAttributes->RootDirectory, NULL);
     }
 
-    NTSTATUS ret = NtDll::NtQueryFullAttributesFile(&NtObjAttr, Attributes);
+    NTSTATUS ret = NtDll::_NtQueryFullAttributesFile(&NtObjAttr, Attributes);
 
 	if(FAILED(ret))
 		EmuWarning("NtQueryFullAttributesFile failed! (0x%.08X)\n", ret);
@@ -2275,7 +2318,7 @@ XBSYSAPI EXPORTNUM(211) xboxkrnl::NTSTATUS NTAPI xboxkrnl::NtQueryInformationFil
 //    if(FileInfo != FilePositionInformation && FileInfo != FileNetworkOpenInformation)
 //        CxbxKrnlCleanup("Unknown FILE_INFORMATION_CLASS 0x%.08X", FileInfo);
 
-    NTSTATUS ret = NtDll::NtQueryInformationFile
+    NTSTATUS ret = NtDll::_NtQueryInformationFile
     (
         FileHandle,
         (NtDll::PIO_STATUS_BLOCK)IoStatusBlock,
@@ -2331,7 +2374,7 @@ XBSYSAPI EXPORTNUM(217) xboxkrnl::NTSTATUS NTAPI xboxkrnl::NtQueryVirtualMemory
            ");\n",
            GetCurrentThreadId(), BaseAddress, Buffer);
 
-    NTSTATUS ret = NtDll::NtQueryVirtualMemory
+    NTSTATUS ret = NtDll::_NtQueryVirtualMemory
     (
         GetCurrentProcess(),
         BaseAddress,
@@ -2378,7 +2421,7 @@ XBSYSAPI EXPORTNUM(218) xboxkrnl::NTSTATUS NTAPI xboxkrnl::NtQueryVolumeInformat
     if((FileInformationClass != FileFsSizeInformation) && (FileInformationClass != FileDirectoryInformation))
         CxbxKrnlCleanup("NtQueryVolumeInformationFile: Unsupported FileInformationClass");
 
-    NTSTATUS ret = NtDll::NtQueryVolumeInformationFile
+    NTSTATUS ret = NtDll::_NtQueryVolumeInformationFile
     (
         FileHandle,
         (NtDll::PIO_STATUS_BLOCK)IoStatusBlock,
@@ -2437,7 +2480,7 @@ XBSYSAPI EXPORTNUM(219) xboxkrnl::NTSTATUS NTAPI xboxkrnl::NtReadFile
 //    if(ByteOffset != 0 && ByteOffset->QuadPart == 0x00120800)
 //        _asm int 3
 
-    NTSTATUS ret = NtDll::NtReadFile(FileHandle, Event, ApcRoutine, ApcContext, IoStatusBlock, Buffer, Length, (NtDll::LARGE_INTEGER*)ByteOffset, 0);
+    NTSTATUS ret = NtDll::_NtReadFile(FileHandle, Event, ApcRoutine, ApcContext, IoStatusBlock, Buffer, Length, (NtDll::LARGE_INTEGER*)ByteOffset, 0);
 
     if(FAILED(ret))
         EmuWarning("NtReadFile Failed!");
@@ -2466,7 +2509,7 @@ XBSYSAPI EXPORTNUM(221) xboxkrnl::NTSTATUS NTAPI xboxkrnl::NtReleaseMutant
            GetCurrentThreadId(), MutantHandle, PreviousCount);
 
     // redirect to NtCreateMutant
-    NTSTATUS ret = NtDll::NtReleaseMutant(MutantHandle, PreviousCount);
+    NTSTATUS ret = NtDll::_NtReleaseMutant(MutantHandle, PreviousCount);
 
     if(FAILED(ret))
         EmuWarning("NtReleaseMutant Failed!");
@@ -2496,7 +2539,7 @@ XBSYSAPI EXPORTNUM(222) xboxkrnl::NTSTATUS NTAPI xboxkrnl::NtReleaseSemaphore
            ");\n",
            GetCurrentThreadId(), SemaphoreHandle, ReleaseCount, PreviousCount);
 
-    NTSTATUS ret = NtDll::NtReleaseSemaphore(SemaphoreHandle, ReleaseCount, PreviousCount);
+    NTSTATUS ret = NtDll::_NtReleaseSemaphore(SemaphoreHandle, ReleaseCount, PreviousCount);
 
     if(FAILED(ret))
         EmuWarning("NtReleaseSemaphore failed!");
@@ -2524,7 +2567,7 @@ XBSYSAPI EXPORTNUM(224) xboxkrnl::NTSTATUS NTAPI xboxkrnl::NtResumeThread
            ");\n",
            GetCurrentThreadId(), ThreadHandle, PreviousSuspendCount);
 
-    NTSTATUS ret = NtDll::NtResumeThread(ThreadHandle, PreviousSuspendCount);
+    NTSTATUS ret = NtDll::_NtResumeThread(ThreadHandle, PreviousSuspendCount);
 
     Sleep(10);
 
@@ -2551,7 +2594,7 @@ XBSYSAPI EXPORTNUM(225) xboxkrnl::NTSTATUS NTAPI xboxkrnl::NtSetEvent
            ");\n",
            GetCurrentThreadId(), EventHandle, PreviousState);
 
-    NTSTATUS ret = NtDll::NtSetEvent(EventHandle, PreviousState);
+    NTSTATUS ret = NtDll::_NtSetEvent(EventHandle, PreviousState);
 
     if(FAILED(ret))
         EmuWarning("NtSetEvent Failed!");
@@ -2581,12 +2624,14 @@ XBSYSAPI EXPORTNUM(226) xboxkrnl::NTSTATUS NTAPI xboxkrnl::NtSetInformationFile
            "   IoStatusBlock        : 0x%.08X\n"
            "   FileInformation      : 0x%.08X\n"
            "   Length               : 0x%.08X\n"
+
+
            "   FileInformationClass : 0x%.08X\n"
            ");\n",
            GetCurrentThreadId(), FileHandle, IoStatusBlock, FileInformation,
            Length, FileInformationClass);
 
-    NTSTATUS ret = NtDll::NtSetInformationFile(FileHandle, IoStatusBlock, FileInformation, Length, FileInformationClass);
+    NTSTATUS ret = NtDll::_NtSetInformationFile(FileHandle, IoStatusBlock, FileInformation, Length, FileInformationClass);
 
     EmuSwapFS();   // Xbox FS
 
@@ -2639,7 +2684,7 @@ XBSYSAPI EXPORTNUM(231) xboxkrnl::NTSTATUS NTAPI xboxkrnl::NtSuspendThread
            ");\n",
            GetCurrentThreadId(), ThreadHandle, PreviousSuspendCount);
 
-    NTSTATUS ret = NtDll::NtSuspendThread(ThreadHandle, PreviousSuspendCount);
+    NTSTATUS ret = NtDll::_NtSuspendThread(ThreadHandle, PreviousSuspendCount);
 
     EmuSwapFS();   // Xbox FS
 
@@ -2678,7 +2723,7 @@ XBSYSAPI EXPORTNUM(232) VOID NTAPI xboxkrnl::NtUserIoApcDispatcher
     if((IoStatusBlock->u1.Status & 0xC0000000) == 0xC0000000)
     {
         dwEcx = 0;
-        dwEax = NtDll::RtlNtStatusToDosError(IoStatusBlock->u1.Status);
+        dwEax = NtDll::_RtlNtStatusToDosError(IoStatusBlock->u1.Status);
     }
     else
     {
@@ -2702,6 +2747,56 @@ XBSYSAPI EXPORTNUM(232) VOID NTAPI xboxkrnl::NtUserIoApcDispatcher
         dwEax = dw3;
     }//*/
 
+#ifdef __GNUC__
+    __asm__ __volatile__(
+#if 1
+        "pushal\n\t"
+#else
+        "pushl %%eax\n\t"
+        "pushl %%ecx\n\t"
+        "pushl %%edx\n\t"
+        "pushl %%ebx\n\t"
+        "pushl %%esp\n\t"
+        "pushl %%ebp\n\t"
+        "pushl %%esi\n\t"
+        "pushl %%edi\n\t"
+#endif
+        /*
+        "mov IoStatusBlock, %esi\n\t"
+        "mov dwEcx, %ecx\n\t"
+        "mov dwEax, %eax\n\t"
+        */
+        // TODO: Figure out if/why this works!? Matches prototype, but not xboxkrnl disassembly
+        // Seems to be XDK/version dependand??
+        "movl %0, %%esi\n\t"
+        "movl %1, %%ecx\n\t"
+        "movl %2, %%eax\n\t"
+
+        "pushl %%esi\n\t"
+        "pushl %%ecx\n\t"
+        "pushl %%eax\n\t"
+
+        "call *%3\n\t"
+
+#if 1
+        "popal"
+#else
+        "popl %%edi\n\t"
+        "popl %%esi\n\t"
+        "popl %%ebp\n\t"
+        "popl %%esp\n\t"
+        "popl %%ebx\n\t"
+        "popl %%edx\n\t"
+        "popl %%ecx\n\t"
+        "popl %%eax"
+#endif
+        :
+        : "m" (dwEsi),
+          "m" (dwEcx),
+          "m" (dwEax),
+          "m" (ApcContext)
+    );
+#else
     __asm
     {
         pushad
@@ -2724,6 +2819,7 @@ XBSYSAPI EXPORTNUM(232) VOID NTAPI xboxkrnl::NtUserIoApcDispatcher
 
         popad
     }
+#endif
 
     EmuSwapFS();   // Win2k/XP FS
 
@@ -2754,7 +2850,7 @@ XBSYSAPI EXPORTNUM(234) xboxkrnl::NTSTATUS NTAPI xboxkrnl::NtWaitForSingleObject
            ");\n",
            GetCurrentThreadId(), Handle, WaitMode, Alertable, Timeout, Timeout == 0 ? 0 : Timeout->QuadPart);
 
-    NTSTATUS ret = NtDll::NtWaitForSingleObject(Handle, Alertable, (NtDll::PLARGE_INTEGER)Timeout);
+    NTSTATUS ret = NtDll::_NtWaitForSingleObject(Handle, Alertable, (NtDll::PLARGE_INTEGER)Timeout);
 
     DbgPrintf("Finished waiting for 0x%.08X\n", Handle);
 
@@ -2790,7 +2886,7 @@ XBSYSAPI EXPORTNUM(235) xboxkrnl::NTSTATUS NTAPI xboxkrnl::NtWaitForMultipleObje
            GetCurrentThreadId(), Count, Handles, WaitType, WaitMode, Alertable,
            Timeout, Timeout == 0 ? 0 : Timeout->QuadPart);
 
-    NTSTATUS ret = NtDll::NtWaitForMultipleObjects(Count, Handles, (NtDll::OBJECT_WAIT_TYPE)WaitType, Alertable, (NtDll::PLARGE_INTEGER)Timeout);
+    NTSTATUS ret = NtDll::_NtWaitForMultipleObjects(Count, Handles, (NtDll::OBJECT_WAIT_TYPE)WaitType, Alertable, (NtDll::PLARGE_INTEGER)Timeout);
 
     EmuSwapFS();   // Xbox FS
 
@@ -2832,7 +2928,7 @@ XBSYSAPI EXPORTNUM(236) xboxkrnl::NTSTATUS NTAPI xboxkrnl::NtWriteFile
 //    if(ByteOffset != 0 && ByteOffset->QuadPart == 0x01C00800)
 //        _asm int 3
 
-    NTSTATUS ret = NtDll::NtWriteFile(FileHandle, Event, ApcRoutine, ApcContext, IoStatusBlock, Buffer, Length, (NtDll::LARGE_INTEGER*)ByteOffset, 0);
+    NTSTATUS ret = NtDll::_NtWriteFile(FileHandle, Event, ApcRoutine, ApcContext, IoStatusBlock, Buffer, Length, (NtDll::LARGE_INTEGER*)ByteOffset, 0);
 
     if(FAILED(ret))
         EmuWarning("NtWriteFile Failed! (0x%.08X)", ret);
@@ -2852,7 +2948,7 @@ XBSYSAPI EXPORTNUM(238) VOID NTAPI xboxkrnl::NtYieldExecution()
     // NOTE: this eats up the debug log far too quickly
     //DbgPrintf("EmuKrnl (0x%X): NtYieldExecution();\n", GetCurrentThreadId());
 
-    NtDll::NtYieldExecution();
+    NtDll::_NtYieldExecution();
 
     EmuSwapFS();   // Xbox FS
 
@@ -2905,7 +3001,7 @@ XBSYSAPI EXPORTNUM(255) xboxkrnl::NTSTATUS NTAPI xboxkrnl::PsCreateSystemThreadE
 
         iPCSTProxyParam->StartContext1 = StartContext1;
         iPCSTProxyParam->StartContext2 = StartContext2;
-        iPCSTProxyParam->StartRoutine  = StartRoutine;
+        iPCSTProxyParam->StartRoutine  = (void **)StartRoutine;
         iPCSTProxyParam->StartSuspended = CreateSuspended;
         iPCSTProxyParam->hStartedEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 
@@ -2999,7 +3095,7 @@ XBSYSAPI EXPORTNUM(260) xboxkrnl::NTSTATUS NTAPI xboxkrnl::RtlAnsiStringToUnicod
            ");\n",
            GetCurrentThreadId(), DestinationString, SourceString, AllocateDestinationString);
 
-    NTSTATUS ret = NtDll::RtlAnsiStringToUnicodeString((NtDll::UNICODE_STRING*)DestinationString, (NtDll::STRING*)SourceString, AllocateDestinationString);
+    NTSTATUS ret = NtDll::_RtlAnsiStringToUnicodeString((NtDll::UNICODE_STRING*)DestinationString, (NtDll::STRING*)SourceString, AllocateDestinationString);
 
     EmuSwapFS();   // Xbox FS
 
@@ -3028,7 +3124,7 @@ XBSYSAPI EXPORTNUM(264) VOID NTAPI xboxkrnl::RtlAssert
            GetCurrentThreadId(), FailedAssertion, FileName, Message, Message);
 
     //TODO: Actually implement this.
-    //NTSTATUS ret = NtDll::RtlAssert((NtDll::UNICODE_STRING*)DestinationString, (NtDll::STRING*)SourceString, AllocateDestinationString);
+    //NTSTATUS ret = NtDll::_RtlAssert((NtDll::UNICODE_STRING*)DestinationString, (NtDll::STRING*)SourceString, AllocateDestinationString);
 
     EmuSwapFS();   // Xbox FS
 
@@ -3064,18 +3160,18 @@ XBSYSAPI EXPORTNUM(277) VOID NTAPI xboxkrnl::RtlEnterCriticalSection
 		{
 			GlobalCriticalSections[iSection].XboxCriticalSection = CriticalSection;
 			if (CriticalSection->LockCount < 0)
-				NtDll::RtlInitializeCriticalSection(&GlobalCriticalSections[iSection].NativeCriticalSection);
+				NtDll::_RtlInitializeCriticalSection(&GlobalCriticalSections[iSection].NativeCriticalSection);
 
-			NtDll::RtlEnterCriticalSection(&GlobalCriticalSections[iSection].NativeCriticalSection);
+			NtDll::_RtlEnterCriticalSection(&GlobalCriticalSections[iSection].NativeCriticalSection);
 
 			CriticalSection->LockCount = GlobalCriticalSections[iSection].NativeCriticalSection.LockCount;
 			CriticalSection->RecursionCount = GlobalCriticalSections[iSection].NativeCriticalSection.RecursionCount;
 			CriticalSection->OwningThread = GlobalCriticalSections[iSection].NativeCriticalSection.OwningThread;
 		}
 		//if(CriticalSection->LockCount == -1)
-			//NtDll::RtlInitializeCriticalSection((NtDll::_RTL_CRITICAL_SECTION*)CriticalSection);
+			//NtDll::_RtlInitializeCriticalSection((NtDll::_RTL_CRITICAL_SECTION*)CriticalSection);
 
-		//NtDll::RtlEnterCriticalSection((NtDll::_RTL_CRITICAL_SECTION*)CriticalSection);
+		//NtDll::_RtlEnterCriticalSection((NtDll::_RTL_CRITICAL_SECTION*)CriticalSection);
 	}
 
     EmuSwapFS();   // Xbox FS
@@ -3103,7 +3199,7 @@ XBSYSAPI EXPORTNUM(279) xboxkrnl::BOOLEAN NTAPI xboxkrnl::RtlEqualString
 			");\n",
 			GetCurrentThreadId(), String1, String1, String2, String2, CaseSensitive );
 
-	BOOLEAN bRet = NtDll::RtlEqualString( (NtDll::PSTRING)String1, (NtDll::PSTRING)String2, (NtDll::BOOLEAN)CaseSensitive );
+	BOOLEAN bRet = NtDll::_RtlEqualString( (NtDll::PSTRING)String1, (NtDll::PSTRING)String2, (NtDll::BOOLEAN)CaseSensitive );
 
 	EmuSwapFS();	// Xbox FS
 
@@ -3128,7 +3224,7 @@ XBSYSAPI EXPORTNUM(289) VOID NTAPI xboxkrnl::RtlInitAnsiString
            ");\n",
            GetCurrentThreadId(), DestinationString, SourceString, SourceString);
 
-    NtDll::RtlInitAnsiString((NtDll::PANSI_STRING)DestinationString, (NtDll::PCSZ)SourceString);
+    NtDll::_RtlInitAnsiString((NtDll::PANSI_STRING)DestinationString, (NtDll::PCSZ)SourceString);
 
     EmuSwapFS();   // Xbox FS
 
@@ -3157,13 +3253,13 @@ XBSYSAPI EXPORTNUM(291) VOID NTAPI xboxkrnl::RtlInitializeCriticalSection
 	if (iSection >= 0)
 	{
 		GlobalCriticalSections[iSection].XboxCriticalSection = CriticalSection;
-		NtDll::RtlInitializeCriticalSection(&GlobalCriticalSections[iSection].NativeCriticalSection);
+		NtDll::_RtlInitializeCriticalSection(&GlobalCriticalSections[iSection].NativeCriticalSection);
 
 		CriticalSection->LockCount = GlobalCriticalSections[iSection].NativeCriticalSection.LockCount;
 		CriticalSection->RecursionCount = GlobalCriticalSections[iSection].NativeCriticalSection.RecursionCount;
 		CriticalSection->OwningThread = GlobalCriticalSections[iSection].NativeCriticalSection.OwningThread;
 	}
-	//NtDll::RtlInitializeCriticalSection((NtDll::_RTL_CRITICAL_SECTION*)CriticalSection);
+	//NtDll::_RtlInitializeCriticalSection((NtDll::_RTL_CRITICAL_SECTION*)CriticalSection);
 
     EmuSwapFS();   // Xbox FS
 
@@ -3185,14 +3281,14 @@ XBSYSAPI EXPORTNUM(294) VOID NTAPI xboxkrnl::RtlLeaveCriticalSection
 	if (iSection >= 0)
 	{
 		GlobalCriticalSections[iSection].XboxCriticalSection = CriticalSection;
-		NtDll::RtlLeaveCriticalSection(&GlobalCriticalSections[iSection].NativeCriticalSection);
+		NtDll::_RtlLeaveCriticalSection(&GlobalCriticalSections[iSection].NativeCriticalSection);
 
 		CriticalSection->LockCount = GlobalCriticalSections[iSection].NativeCriticalSection.LockCount;
 		CriticalSection->RecursionCount = GlobalCriticalSections[iSection].NativeCriticalSection.RecursionCount;
 		CriticalSection->OwningThread = GlobalCriticalSections[iSection].NativeCriticalSection.OwningThread;
 	}
 	// Note: We need to execute this before debug output to avoid trouble
-	//NtDll::RtlLeaveCriticalSection((NtDll::_RTL_CRITICAL_SECTION*)CriticalSection);
+	//NtDll::_RtlLeaveCriticalSection((NtDll::_RTL_CRITICAL_SECTION*)CriticalSection);
 
     /* sorta pointless
     DbgPrintf("EmuKrnl (0x%X): RtlLeaveCriticalSection\n"
@@ -3239,7 +3335,7 @@ XBSYSAPI EXPORTNUM(301) xboxkrnl::ULONG NTAPI xboxkrnl::RtlNtStatusToDosError
            ");\n",
            GetCurrentThreadId(), Status);
 
-    ULONG ret = NtDll::RtlNtStatusToDosError(Status);
+    ULONG ret = NtDll::_RtlNtStatusToDosError(Status);
 
     EmuSwapFS();   // Xbox FS
 
@@ -3264,7 +3360,7 @@ XBSYSAPI EXPORTNUM(304) xboxkrnl::BOOLEAN NTAPI xboxkrnl::RtlTimeFieldsToTime
            ");\n",
            GetCurrentThreadId(), TimeFields, Time);
 
-    BOOLEAN bRet = NtDll::RtlTimeFieldsToTime((NtDll::TIME_FIELDS*)TimeFields, (NtDll::LARGE_INTEGER*)Time);
+    BOOLEAN bRet = NtDll::_RtlTimeFieldsToTime((NtDll::TIME_FIELDS*)TimeFields, (NtDll::LARGE_INTEGER*)Time);
 
     EmuSwapFS();   // Xbox FS
 
@@ -3289,7 +3385,7 @@ XBSYSAPI EXPORTNUM(305) VOID NTAPI xboxkrnl::RtlTimeToTimeFields
            ");\n",
            GetCurrentThreadId(), Time, TimeFields);
 
-    NtDll::RtlTimeToTimeFields((NtDll::LARGE_INTEGER*)Time, (NtDll::TIME_FIELDS*)TimeFields);
+    NtDll::_RtlTimeToTimeFields((NtDll::LARGE_INTEGER*)Time, (NtDll::TIME_FIELDS*)TimeFields);
 
     EmuSwapFS();   // Xbox FS
 
@@ -3320,15 +3416,15 @@ XBSYSAPI EXPORTNUM(306) xboxkrnl::BOOLEAN NTAPI xboxkrnl::RtlTryEnterCriticalSec
 	{
 		GlobalCriticalSections[iSection].XboxCriticalSection = CriticalSection;
 		if (CriticalSection->LockCount < 0)
-			NtDll::RtlInitializeCriticalSection(&GlobalCriticalSections[iSection].NativeCriticalSection);
+			NtDll::_RtlInitializeCriticalSection(&GlobalCriticalSections[iSection].NativeCriticalSection);
 
-		bRet = NtDll::RtlTryEnterCriticalSection(&GlobalCriticalSections[iSection].NativeCriticalSection);
+		bRet = NtDll::_RtlTryEnterCriticalSection(&GlobalCriticalSections[iSection].NativeCriticalSection);
 
 		CriticalSection->LockCount = GlobalCriticalSections[iSection].NativeCriticalSection.LockCount;
 		CriticalSection->RecursionCount = GlobalCriticalSections[iSection].NativeCriticalSection.RecursionCount;
 		CriticalSection->OwningThread = GlobalCriticalSections[iSection].NativeCriticalSection.OwningThread;
 	}
-	//bRet = NtDll::RtlTryEnterCriticalSection((NtDll::PRTL_CRITICAL_SECTION)CriticalSection);
+	//bRet = NtDll::_RtlTryEnterCriticalSection((NtDll::PRTL_CRITICAL_SECTION)CriticalSection);
 
     EmuSwapFS();   // Xbox FS
 
@@ -3355,7 +3451,7 @@ XBSYSAPI EXPORTNUM(308) xboxkrnl::NTSTATUS NTAPI xboxkrnl::RtlUnicodeStringToAns
            ");\n",
            GetCurrentThreadId(), DestinationString, SourceString, AllocateDestinationString);
 
-    NTSTATUS ret = NtDll::RtlUnicodeStringToAnsiString((NtDll::STRING*)DestinationString, (NtDll::UNICODE_STRING*)SourceString, AllocateDestinationString);
+    NTSTATUS ret = NtDll::_RtlUnicodeStringToAnsiString((NtDll::STRING*)DestinationString, (NtDll::UNICODE_STRING*)SourceString, AllocateDestinationString);
 
     EmuSwapFS();   // Xbox FS
 

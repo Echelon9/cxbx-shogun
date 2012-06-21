@@ -127,7 +127,7 @@ uint16 EmuAllocateLDT(uint32 dwBaseAddr, uint32 dwLimit)
     // * Allocate selector
     // ******************************************************************
     {
-        if(!NT_SUCCESS(NtDll::NtSetLdtEntries((x*8)+7+8, LDTEntry, 0, LDTEntry)))
+        if(!NT_SUCCESS(NtDll::_NtSetLdtEntries((x*8)+7+8, LDTEntry, 0, LDTEntry)))
         {
             LeaveCriticalSection(&EmuLDTLock);
 
@@ -155,7 +155,7 @@ void EmuDeallocateLDT(uint16 wSelector)
 
     ZeroMemory(&LDTEntry, sizeof(LDTEntry));
 
-    NtDll::NtSetLdtEntries(wSelector, LDTEntry, 0, LDTEntry);
+    NtDll::_NtSetLdtEntries(wSelector, LDTEntry, 0, LDTEntry);
 
     FreeLDTEntries[(wSelector >> 3)-1] = wSelector;
 

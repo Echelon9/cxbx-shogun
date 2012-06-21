@@ -56,11 +56,19 @@ static inline bool EmuIsXboxFS()
 {
     unsigned char chk;
 
+#ifdef __GNUC__
+    __asm__ __volatile__(
+        "movb %%fs:0x16, %%ah\n\t"
+        "movb %%ah, %0"
+        : "=q" (chk)
+    );
+#else
     __asm
     {
         mov ah, fs:[0x16]
         mov chk, ah
     }
+#endif
 
     return (chk == 1);
 }
@@ -90,11 +98,18 @@ static inline void EmuSwapFS()
     // non-interception code uses it
     static uint32 dwInterceptionCount = 0;
 
+#ifdef __GNUC__
+    __asm__ __volatile__(
+        "movw %fs:0x14, %ax\n\t"
+        "movw %ax, %fs"
+    );
+#else
     __asm
     {
         mov ax, fs:[0x14]
         mov fs, ax
     }
+#endif
 
     // every 'N' interceptions, perform various periodic services
     if(dwInterceptionCount++ >= EmuAutoSleepRate)

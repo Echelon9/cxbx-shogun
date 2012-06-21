@@ -37,7 +37,11 @@
 
 #include <memory.h>
 #include <clocale>
+#ifndef __GNUC__
 #include <cstdlib>
+#else
+#include <stdlib.h>
+#endif
 #include <cstring>
 #include <ctime>
 
@@ -1228,6 +1232,7 @@ void Xbe::DumpInformation(FILE *x_file)
         if(m_LibraryVersion == 0 || m_Header.dwLibraryVersions == 0)
         {
             fprintf(x_file, "(This XBE contains no Library Versions)\n");
+
             fprintf(x_file, "\n");
         }
         else

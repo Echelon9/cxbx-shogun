@@ -69,10 +69,14 @@ bool Wnd::ProcessMessages()
     // initialize window
     if(!m_initialized)
     {
+#ifndef __WINE__
 #ifdef _DEBUG
         HMODULE hCxbxDll = GetModuleHandle("CxbxKrnl.dll");
 #else
         HMODULE hCxbxDll = GetModuleHandle("Cxbx.dll");
+#endif
+#else
+        HMODULE hCxbxDll = GetModuleHandle(NULL);
 #endif
         m_initialized = true;
 

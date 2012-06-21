@@ -890,7 +890,11 @@ static void EmuInstallWrappers(OOVPATable *OovpaTable, uint32 OovpaTableSize, Xb
 // alert for the situation where an Xref function body is hit
 static void EmuXRefFailure()
 {
+#ifdef __GNUC__
+    __asm__("int $3");
+#else
     _asm int 3;
+#endif
     EmuSwapFS();    // Win2k/XP FS
 
     CxbxKrnlCleanup("XRef-only function body reached. Fatal Error.");

@@ -51,8 +51,12 @@ extern "C"
 // ******************************************************************
 // * dll import/export
 // ******************************************************************
+#ifndef DECLSPEC_IMPORT
 #define DECLSPEC_IMPORT __declspec(dllimport)
+#endif
+#ifndef DECLSPEC_EXPORT
 #define DECLSPEC_EXPORT __declspec(dllexport)
+#endif
 
 // ******************************************************************
 // * cxbx_krnl exports, others import
@@ -124,7 +128,13 @@ typedef unsigned __int64                ULONGLONG;
 #define CDECL               __cdecl
 #endif
 #define INLINE              __inline
+#ifndef DECLSPEC_NORETURN
+#ifdef __GNUC__
+#define DECLSPEC_NORETURN   __attribute__((__noreturn__))
+#else
 #define DECLSPEC_NORETURN   __declspec(noreturn)
+#endif
+#endif
 
 // ******************************************************************
 // * documentation purposes only
@@ -1073,53 +1083,63 @@ typedef PVOID (NTAPI *FPTR_RtlDestroyHeap)
 // ******************************************************************
 // * Exported API
 // ******************************************************************
-extern FPTR_RtlInitAnsiString              RtlInitAnsiString;
-extern FPTR_RtlInitUnicodeString           RtlInitUnicodeString;
-extern FPTR_RtlAnsiStringToUnicodeString   RtlAnsiStringToUnicodeString;
-extern FPTR_RtlUnicodeStringToAnsiString   RtlUnicodeStringToAnsiString;
-extern FPTR_RtlNtStatusToDosError          RtlNtStatusToDosError;
-extern FPTR_RtlTimeFieldsToTime            RtlTimeFieldsToTime;
-extern FPTR_RtlTimeToTimeFields            RtlTimeToTimeFields;
-extern FPTR_RtlTryEnterCriticalSection     RtlTryEnterCriticalSection;
-extern FPTR_RtlInitializeCriticalSection   RtlInitializeCriticalSection;
-extern FPTR_RtlEnterCriticalSection        RtlEnterCriticalSection;
-extern FPTR_RtlLeaveCriticalSection        RtlLeaveCriticalSection;
-extern FPTR_NtWaitForSingleObject          NtWaitForSingleObject;
-extern FPTR_NtWaitForMultipleObjects       NtWaitForMultipleObjects;
-extern FPTR_RtlCreateHeap                  RtlCreateHeap;
-extern FPTR_RtlAllocateHeap                RtlAllocateHeap;
-extern FPTR_RtlFreeHeap                    RtlFreeHeap;
-extern FPTR_RtlReAllocateHeap              RtlReAllocateHeap;
-extern FPTR_RtlSizeHeap                    RtlSizeHeap;
-extern FPTR_RtlDestroyHeap				   RtlDestroyHeap;
-extern FPTR_RtlEqualString				   RtlEqualString;
-extern FPTR_NtAllocateVirtualMemory        NtAllocateVirtualMemory;
-extern FPTR_NtFreeVirtualMemory            NtFreeVirtualMemory;
-extern FPTR_NtQueryVirtualMemory           NtQueryVirtualMemory;
-extern FPTR_NtClearEvent                   NtClearEvent;
-extern FPTR_NtClose                        NtClose;
-extern FPTR_NtDelayExecution               NtDelayExecution;
-extern FPTR_NtDuplicateObject              NtDuplicateObject;
-extern FPTR_NtFlushBuffersFile             NtFlushBuffersFile;
-extern FPTR_NtQueryInformationFile         NtQueryInformationFile;
-extern FPTR_NtQueryDirectoryFile           NtQueryDirectoryFile;
-extern FPTR_NtQueryFullAttributesFile      NtQueryFullAttributesFile;
-extern FPTR_NtQueryVolumeInformationFile   NtQueryVolumeInformationFile;
-extern FPTR_NtCreateEvent                  NtCreateEvent;
-extern FPTR_NtCreateMutant                 NtCreateMutant;
-extern FPTR_NtReleaseMutant                NtReleaseMutant;
-extern FPTR_NtCreateSemaphore              NtCreateSemaphore;
-extern FPTR_NtReleaseSemaphore             NtReleaseSemaphore;
-extern FPTR_NtCreateFile                   NtCreateFile;
-extern FPTR_NtReadFile                     NtReadFile;
-extern FPTR_NtWriteFile                    NtWriteFile;
-extern FPTR_NtYieldExecution               NtYieldExecution;
-extern FPTR_NtSetInformationFile           NtSetInformationFile;
-extern FPTR_NtSetEvent                     NtSetEvent;
-extern FPTR_NtSuspendThread                NtSuspendThread;
-extern FPTR_NtResumeThread                 NtResumeThread;
-extern FPTR_NtSetLdtEntries                NtSetLdtEntries;
-extern FPTR_NtQueueApcThread			   NtQueueApcThread;
+#ifdef _EMUNTDLL_NODEFEXTERN_
+#define EXTERN
+#else
+#define EXTERN extern
+#endif
+EXTERN FPTR_RtlInitAnsiString              _RtlInitAnsiString;
+EXTERN FPTR_RtlInitUnicodeString           _RtlInitUnicodeString;
+EXTERN FPTR_RtlAnsiStringToUnicodeString   _RtlAnsiStringToUnicodeString;
+EXTERN FPTR_RtlUnicodeStringToAnsiString   _RtlUnicodeStringToAnsiString;
+EXTERN FPTR_RtlNtStatusToDosError          _RtlNtStatusToDosError;
+EXTERN FPTR_RtlTimeFieldsToTime            _RtlTimeFieldsToTime;
+EXTERN FPTR_RtlTimeToTimeFields            _RtlTimeToTimeFields;
+EXTERN FPTR_RtlTryEnterCriticalSection     _RtlTryEnterCriticalSection;
+EXTERN FPTR_RtlInitializeCriticalSection   _RtlInitializeCriticalSection;
+EXTERN FPTR_RtlEnterCriticalSection        _RtlEnterCriticalSection;
+EXTERN FPTR_RtlLeaveCriticalSection        _RtlLeaveCriticalSection;
+EXTERN FPTR_NtWaitForSingleObject          _NtWaitForSingleObject;
+EXTERN FPTR_NtWaitForMultipleObjects       _NtWaitForMultipleObjects;
+EXTERN FPTR_RtlCreateHeap                  _RtlCreateHeap;
+EXTERN FPTR_RtlAllocateHeap                _RtlAllocateHeap;
+EXTERN FPTR_RtlFreeHeap                    _RtlFreeHeap;
+EXTERN FPTR_RtlReAllocateHeap              _RtlReAllocateHeap;
+EXTERN FPTR_RtlSizeHeap                    _RtlSizeHeap;
+EXTERN FPTR_RtlDestroyHeap				   _RtlDestroyHeap;
+EXTERN FPTR_RtlEqualString				   _RtlEqualString;
+EXTERN FPTR_NtAllocateVirtualMemory        _NtAllocateVirtualMemory;
+EXTERN FPTR_NtFreeVirtualMemory            _NtFreeVirtualMemory;
+EXTERN FPTR_NtQueryVirtualMemory           _NtQueryVirtualMemory;
+EXTERN FPTR_NtClearEvent                   _NtClearEvent;
+EXTERN FPTR_NtClose                        _NtClose;
+EXTERN FPTR_NtDelayExecution               _NtDelayExecution;
+EXTERN FPTR_NtDuplicateObject              _NtDuplicateObject;
+EXTERN FPTR_NtFlushBuffersFile             _NtFlushBuffersFile;
+EXTERN FPTR_NtQueryInformationFile         _NtQueryInformationFile;
+EXTERN FPTR_NtQueryDirectoryFile           _NtQueryDirectoryFile;
+EXTERN FPTR_NtQueryFullAttributesFile      _NtQueryFullAttributesFile;
+EXTERN FPTR_NtQueryVolumeInformationFile   _NtQueryVolumeInformationFile;
+EXTERN FPTR_NtCreateEvent                  _NtCreateEvent;
+EXTERN FPTR_NtCreateMutant                 _NtCreateMutant;
+EXTERN FPTR_NtReleaseMutant                _NtReleaseMutant;
+EXTERN FPTR_NtCreateSemaphore              _NtCreateSemaphore;
+EXTERN FPTR_NtReleaseSemaphore             _NtReleaseSemaphore;
+EXTERN FPTR_NtCreateFile                   _NtCreateFile;
+EXTERN FPTR_NtReadFile                     _NtReadFile;
+EXTERN FPTR_NtWriteFile                    _NtWriteFile;
+EXTERN FPTR_NtYieldExecution               _NtYieldExecution;
+EXTERN FPTR_NtSetInformationFile           _NtSetInformationFile;
+EXTERN FPTR_NtSetEvent                     _NtSetEvent;
+EXTERN FPTR_NtSuspendThread                _NtSuspendThread;
+EXTERN FPTR_NtResumeThread                 _NtResumeThread;
+EXTERN FPTR_NtSetLdtEntries                _NtSetLdtEntries;
+EXTERN FPTR_NtQueueApcThread			   _NtQueueApcThread;
+#undef EXTERN
+
+#ifdef __WINE__
+extern "C" void InitializeNtDll(void);
+#endif
 
 #if defined(__cplusplus)
 }

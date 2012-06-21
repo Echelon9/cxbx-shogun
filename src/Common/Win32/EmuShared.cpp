@@ -111,7 +111,14 @@ CXBXKRNL_API void EmuShared::Init()
     // * Executed only on first initialization of shared memory
     // ******************************************************************
     if(init)
+    {
+#ifdef __GNUC__ // error: cannot call constructor ‘EmuShared::EmuShared’ directly
+        g_EmuShared->m_XBController.Load("Software\\Cxbx\\XBController");
+        g_EmuShared->m_XBVideo.Load("Software\\Cxbx\\XBVideo");
+#else
         g_EmuShared->EmuShared::EmuShared();
+#endif
+    }
 
     g_EmuSharedRefCount++;
 }

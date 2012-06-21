@@ -118,10 +118,10 @@ void CxbxAllocDump(bool DumpData);
 #define CxbxMalloc(x)                            malloc(x)
 #define CxbxCalloc(x, y)                         calloc(x, y)
 #define CxbxFree(x)                              free(x)
-#define CxbxRtlAlloc(Heap, Flags, Bytes)         NtDll::RtlAllocateHeap(Heap, Flags, Bytes)
-#define CxbxRtlFree(Heap, Flags, pMem)           NtDll::RtlFreeHeap(Heap, Flags, pMem)
-#define CxbxRtlRealloc(Heap, Flags, pMem, Bytes) NtDll::RtlReAllocateHeap(Heap, Flags, pMem, Bytes)
-#define CxbxRtlSizeHeap(Heap, Flags, pMem)       NtDll::RtlSizeHeap(Heap, Flags, pMem)
+#define CxbxRtlAlloc(Heap, Flags, Bytes)         NtDll::_RtlAllocateHeap(Heap, Flags, Bytes)
+#define CxbxRtlFree(Heap, Flags, pMem)           NtDll::_RtlFreeHeap(Heap, Flags, pMem)
+#define CxbxRtlRealloc(Heap, Flags, pMem, Bytes) NtDll::_RtlReAllocateHeap(Heap, Flags, pMem, Bytes)
+#define CxbxRtlSizeHeap(Heap, Flags, pMem)       NtDll::_RtlSizeHeap(Heap, Flags, pMem)
 #endif
 
 #endif // EMUALLOC_H

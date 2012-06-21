@@ -1,0 +1,26 @@
+@ cdecl CxbxKrnlVerifyVersion(str)
+@ cdecl CxbxKrnlInit(ptr ptr ptr ptr long str ptr long ptr)
+@ varargs CxbxKrnlCleanup(str)
+@ cdecl CxbxKrnlRegisterThread(ptr)
+@ cdecl CxbxKrnlSuspend()
+@ cdecl CxbxKrnlResume()
+@ cdecl CxbxKrnlTerminateThread()
+@ cdecl CxbxKrnlPanic()
+@ cdecl CxbxKrnlNoFunc()
+@ extern CxbxKrnl_KernelThunkTable
+@ extern CxbxKrnl_TLS
+@ extern CxbxKrnl_TLSData
+@ extern CxbxKrnl_XbeHeader
+@ extern CxbxKrnl_hEmuParent
+@ varargs EmuWarning(str)
+@ cdecl _ZN9EmuShared4InitEv()
+@ cdecl _ZN9EmuShared7CleanupEv()
+@ cdecl _ZN9EmuSharedC1Ev()
+@ cdecl _ZN9EmuSharedC2Ev()
+@ cdecl _ZN9EmuSharedD1Ev()
+@ cdecl _ZN9EmuSharedD2Ev()
+@ cdecl _ZN9EmuShared10GetXBVideoEP7XBVideo(ptr)
+@ cdecl _ZN9EmuShared10GetXbePathEPc(str)
+@ cdecl _ZN9EmuShared15GetXBControllerEP12XBController(ptr)
+@ extern g_EmuShared
+@ extern g_EmuSharedRefCount
