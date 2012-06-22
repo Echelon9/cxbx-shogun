@@ -1484,32 +1484,33 @@ static DWORD VshGetDeclarationSize(DWORD *pDeclaration)
 DWORD Xb2PCRegisterType(DWORD VertexRegister)
 {
     DWORD PCRegisterType;
-#ifndef D3D9
+
     switch(VertexRegister)
     {
+#ifndef D3D9
     case -1:
         DbgVshPrintf("D3DVSDE_VERTEX /* xbox ext. */");
         PCRegisterType = -1;
         break;
     case 0:
         DbgVshPrintf("D3DVSDE_POSITION");
-        PCRegisterType = D3DVSDE_POSITION;
+        PCRegisterType = XTL::D3DVSDE_POSITION;
         break;
     case 1:
         DbgVshPrintf("D3DVSDE_BLENDWEIGHT");
-        PCRegisterType = D3DVSDE_BLENDWEIGHT;
+        PCRegisterType = XTL::D3DVSDE_BLENDWEIGHT;
         break;
     case 2:
         DbgVshPrintf("D3DVSDE_NORMAL");
-        PCRegisterType = D3DVSDE_NORMAL;
+        PCRegisterType = XTL::D3DVSDE_NORMAL;
         break;
     case 3:
         DbgVshPrintf("D3DVSDE_DIFFUSE");
-        PCRegisterType = D3DVSDE_DIFFUSE;
+        PCRegisterType = XTL::D3DVSDE_DIFFUSE;
         break;
     case 4:
         DbgVshPrintf("D3DVSDE_SPECULAR");
-        PCRegisterType = D3DVSDE_SPECULAR;
+        PCRegisterType = XTL::D3DVSDE_SPECULAR;
         break;
     case 5:
         DbgVshPrintf("D3DVSDE_FOG /* xbox ext. */");
@@ -1525,26 +1526,27 @@ DWORD Xb2PCRegisterType(DWORD VertexRegister)
         break;
     case 9:
         DbgVshPrintf("D3DVSDE_TEXCOORD0");
-        PCRegisterType = D3DVSDE_TEXCOORD0;
+        PCRegisterType = XTL::D3DVSDE_TEXCOORD0;
         break;
     case 10:
         DbgVshPrintf("D3DVSDE_TEXCOORD1");
-        PCRegisterType = D3DVSDE_TEXCOORD1;
+        PCRegisterType = XTL::D3DVSDE_TEXCOORD1;
         break;
     case 11:
         DbgVshPrintf("D3DVSDE_TEXCOORD2");
-        PCRegisterType = D3DVSDE_TEXCOORD2;
+        PCRegisterType = XTL::D3DVSDE_TEXCOORD2;
         break;
     case 12:
         DbgVshPrintf("D3DVSDE_TEXCOORD3");
-        PCRegisterType = D3DVSDE_TEXCOORD3;
+        PCRegisterType = XTL::D3DVSDE_TEXCOORD3;
         break;
+#endif
     default:
         DbgVshPrintf("%d /* unknown register */", VertexRegister);
         PCRegisterType = -1;
         break;
     }
-#endif
+
     return PCRegisterType;
 }
 

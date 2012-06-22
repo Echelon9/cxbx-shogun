@@ -187,7 +187,9 @@ extern "C" CXBXKRNL_API void CxbxKrnlInit
     // debug console allocation (if configured)
     if(DbgMode == DM_CONSOLE)
     {
+#ifndef __WINE__
         if(AllocConsole())
+#endif
         {
             freopen("CONOUT$", "wt", stdout);
             freopen("CONIN$", "rt", stdin);
@@ -224,9 +226,6 @@ extern "C" CXBXKRNL_API void CxbxKrnlInit
     //
 
     {
-        #ifdef _DEBUG_TRACE
-        printf("EmuMain (0x%X): Debug Trace Enabled.\n", GetCurrentThreadId());
-
         printf("EmuMain (0x%X): CxbxKrnlInit\n"
                "(\n"
                "   hwndParent          : 0x%.08X\n"
@@ -240,7 +239,8 @@ extern "C" CXBXKRNL_API void CxbxKrnlInit
                "   Entry               : 0x%.08X\n"
                ");\n",
                GetCurrentThreadId(), hwndParent, pTLSData, pTLS, pLibraryVersion, DbgMode, szDebugFilename, pXbeHeader, dwXbeHeaderSize, Entry);
-
+        #ifdef _DEBUG_TRACE
+        printf("EmuMain (0x%X): Debug Trace Enabled.\n", GetCurrentThreadId());
         #else
         printf("EmuMain (0x%X): Debug Trace Disabled.\n", GetCurrentThreadId());
         #endif

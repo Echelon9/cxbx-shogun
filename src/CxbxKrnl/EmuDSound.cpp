@@ -938,11 +938,8 @@ HRESULT WINAPI XTL::EmuDirectSoundCreateBuffer
 			/*if(pdsbd->dwBufferBytes == 0)
 				pDSBufferDesc->dwBufferBytes = 3 * pDSBufferDesc->lpwfxFormat->nAvgBytesPerSec;*/
 		}
-#ifndef D3D9
+
         pDSBufferDesc->guid3DAlgorithm = DS3DALG_DEFAULT;
-#else
-        pDSBufferDesc->guid3DAlgorithm = GUID_NULL;
-#endif
     }
 
     // sanity check
@@ -1635,11 +1632,9 @@ HRESULT WINAPI XTL::EmuDirectSoundCreateStream
             pDSBufferDesc->lpwfxFormat = (WAVEFORMATEX*)CxbxMalloc(sizeof(WAVEFORMATEX));
             memcpy(pDSBufferDesc->lpwfxFormat, pdssd->lpwfxFormat, sizeof(WAVEFORMATEX));
         }
-#ifndef D3D9
+
         pDSBufferDesc->guid3DAlgorithm = DS3DALG_DEFAULT;
-#else
-        pDSBufferDesc->guid3DAlgorithm = GUID_NULL;
-#endif
+
         if(pDSBufferDesc->lpwfxFormat != NULL && pDSBufferDesc->lpwfxFormat->wFormatTag != WAVE_FORMAT_PCM)
         {
             EmuWarning("Invalid WAVE_FORMAT!");

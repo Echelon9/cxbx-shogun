@@ -40,9 +40,17 @@
 #include <d3dx9.h>
 #else
 #define DIRECT3D_VERSION 0x0800
+#ifdef __WINE__
+#include <d3dx8.h>
+#else
 #include <d3d8.h>
 #include <d3dx8tex.h>
+#endif
 #include <d3d8types.h>
+#endif
+
+#ifndef DS3DALG_DEFAULT
+#define DS3DALG_DEFAULT GUID_NULL
 #endif
 
 // TODO: fill out these enumeration tables for convienance

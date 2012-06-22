@@ -76,7 +76,12 @@ CXBXKRNL_API void CxbxKrnlPanic();
 CXBXKRNL_API void CxbxKrnlNoFunc();
 
 /*! kernel thunk table */
-extern CXBXKRNL_API uint32 CxbxKrnl_KernelThunkTable[367];
+#ifdef __WINE__
+extern "C" CXBXKRNL_API uint32 *_CxbxKrnl_KernelThunkTable(void);
+#define CxbxKrnl_KernelThunkTable (_CxbxKrnl_KernelThunkTable())
+#else
+extern const CXBXKRNL_API uint32 CxbxKrnl_KernelThunkTable[367];
+#endif
 
 /*! thread local storage structure */
 extern CXBXKRNL_API Xbe::TLS *CxbxKrnl_TLS;

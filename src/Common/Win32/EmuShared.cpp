@@ -42,11 +42,19 @@
 #include <windows.h>
 #include <cstdio>
 
+#ifdef g_EmuShared
+#undef g_EmuShared
+#endif
+
 // ******************************************************************
 // * exported globals
 // ******************************************************************
 CXBXKRNL_API EmuShared *g_EmuShared = NULL;
 CXBXKRNL_API int        g_EmuSharedRefCount = 0;
+
+#ifdef __WINE__
+extern "C" CXBXKRNL_API EmuShared *_g_EmuShared(void) { return g_EmuShared; }
+#endif
 
 // ******************************************************************
 // * static/global

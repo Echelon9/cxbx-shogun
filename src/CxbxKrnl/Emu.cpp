@@ -58,7 +58,7 @@ namespace NtDll
 #include "HLEIntercept.h"
 
 #ifdef _DEBUG
-#include <Dbghelp.h>
+#include <dbghelp.h>
 CRITICAL_SECTION dbgCritical;
 #endif
 
@@ -94,16 +94,17 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
 #ifdef _DEBUG
         InitializeCriticalSection(&dbgCritical);
 #endif
-
         EmuShared::Init();
         hInitInstance = hinstDLL;
+#ifdef __WINE__
+        NtDll::InitializeNtDll();
+#endif
     }
 
     if(fdwReason == DLL_PROCESS_DETACH)
     {
         if(hInitInstance == hinstDLL)
             EmuShared::Cleanup();
-
 #ifdef _DEBUG
         DeleteCriticalSection(&dbgCritical);
 #endif

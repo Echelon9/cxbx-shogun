@@ -43,6 +43,10 @@ namespace xboxkrnl
 #include "Cxbx.h"
 #include "CxbxKrnl.h"
 
+#ifdef CxbxKrnl_KernelThunkTable
+#undef CxbxKrnl_KernelThunkTable
+#endif
+
 //
 // Enable "#define PANIC(numb) numb" if you wish to find out what
 // kernel export the application is attempting to call. The app
@@ -55,7 +59,7 @@ namespace xboxkrnl
 #define PANIC(numb) numb
 
 // kernel thunk table
-extern "C" CXBXKRNL_API uint32 CxbxKrnl_KernelThunkTable[367] =
+const CXBXKRNL_API uint32 CxbxKrnl_KernelThunkTable[367] =
 {
     (uint32)PANIC(0x0000),                          // 0x0000 (0)
     (uint32)&xboxkrnl::AvGetSavedDataAddress,       // 0x0001 (1)
@@ -425,3 +429,7 @@ extern "C" CXBXKRNL_API uint32 CxbxKrnl_KernelThunkTable[367] =
     (uint32)PANIC(0x016D),                          // 0x016D (365)
     (uint32)PANIC(0x016E),                          // 0x016E (366)
 };
+
+#ifdef __WINE__
+extern "C" CXBXKRNL_API uint32 *_CxbxKrnl_KernelThunkTable(void) { return CxbxKrnl_KernelThunkTable; }
+#endif

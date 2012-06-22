@@ -448,10 +448,14 @@ EmuExe::EmuExe(Xbe *x_Xbe, DebugMode x_debug_mode, char *x_debug_filename, HWND 
             *(uint32*)&m_bzSection[i][0x34] = 0;
             *(uint16*)&m_bzSection[i][0x38] = 0x0001;
 
+            #ifndef __WINE__
             #ifdef _DEBUG
             memcpy(&m_bzSection[i][0x3A], "CxbxKrnlNoFunc\0\0CxbxKrnl.dll\0\0", 30);
             #else
             memcpy(&m_bzSection[i][0x3A], "CxbxKrnlNoFunc\0\0Cxbx.dll\0\0\0\0\0\0", 30);
+            #endif
+            #else
+            memcpy(&m_bzSection[i][0x3A], "CxbxKrnlNoFunc\0\0cxbx.dll\0\0\0\0\0\0", 30);
             #endif
 
             printf("OK\n");
@@ -529,8 +533,11 @@ EmuExe::EmuExe(Xbe *x_Xbe, DebugMode x_debug_mode, char *x_debug_filename, HWND 
             uint32 WriteCursor = m_SectionHeader[i].m_virtual_addr + m_OptionalHeader.m_image_base + 0x100;
 
             // Function Pointer
+#ifndef __WINE__
             *(uint32 *)((uint32)m_bzSection[i] + 1)  = (uint32)CxbxKrnlInit;
-
+#else
+            *(uint32 *)((uint32)m_bzSection[i] + 1)  = (uint32)GetProcAddress(GetModuleHandle("cxbx"), "CxbxKrnlInit");
+#endif
             // Param 8 : Entry
             *(uint32 *)((uint32)m_bzSection[i] + 6)  = (uint32)ep;
 

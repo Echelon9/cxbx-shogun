@@ -92,7 +92,12 @@ class EmuShared : public Mutex
 // ******************************************************************
 // * Exported Global Shared Memory Pointer
 // ******************************************************************
+#ifdef __WINE__
+extern "C" CXBXKRNL_API EmuShared *_g_EmuShared(void);
+#define g_EmuShared (_g_EmuShared())
+#else
 extern CXBXKRNL_API EmuShared *g_EmuShared;
+#endif
 extern CXBXKRNL_API int        g_EmuSharedRefCount;
 
 #endif

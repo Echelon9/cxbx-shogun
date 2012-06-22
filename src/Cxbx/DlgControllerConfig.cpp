@@ -48,7 +48,7 @@ static VOID ConfigureInput(HWND hWndDlg, HWND hWndButton, XBCtrlObject object);
 static VOID EnableButtonWindows(HWND hWndDlg, HWND hExclude, BOOL bEnable);
 
 /*! controller configuration */
-static XBController g_XBController;
+static XBController *g_XBController = NULL;
 /*! changes flag */
 static BOOL g_bHasChanges = FALSE;
 
@@ -58,7 +58,8 @@ VOID ShowControllerConfig(HWND hwnd)
     g_bHasChanges = FALSE;
 
     /*! retrieve controller configuration */
-    g_EmuShared->GetXBController(&g_XBController);
+    g_XBController = (XBController *)malloc(sizeof(*g_XBController));
+    g_EmuShared->GetXBController(g_XBController);
 
     /*! show dialog box */
     DialogBox(GetModuleHandle(NULL), MAKEINTRESOURCE(IDD_CONTROLLER_CFG), hwnd, DlgControllerConfigProc);
@@ -107,12 +108,11 @@ INT_PTR CALLBACK DlgControllerConfigProc(HWND hWndDlg, UINT uMsg, WPARAM wParam,
 
             switch(LOWORD(wParam))
             {
-                case IDC_INPUT_CONFIG_CANCEL:
-                    EndDialog(hWndDlg, wParam);
-                    break;
-
                 case IDC_INPUT_CONFIG_ACCEPT:
-                    g_EmuShared->SetXBController(&g_XBController);
+                    g_EmuShared->SetXBController(g_XBController);
+                case IDC_INPUT_CONFIG_CANCEL:
+                    free(g_XBController);
+                    g_XBController = NULL;
                     EndDialog(hWndDlg, wParam);
                     break;
 
@@ -284,7 +284,7 @@ VOID ConfigureInput(HWND hWndDlg, HWND hWndButton, XBCtrlObject object)
     SetWindowText(GetDlgItem(hWndDlg, IDC_CONFIG_STATUS), "Waiting for your input...");
     GetWindowText(hWndButton, szOrgText, 32);
 
-    g_XBController.ConfigBegin(hWndDlg, object);
+    g_XBController->ConfigBegin(hWndDlg, object);
 
     // wait for input, or 5 second timeout
     for(int v=100;v>0;v--)
@@ -299,12 +299,12 @@ VOID ConfigureInput(HWND hWndDlg, HWND hWndButton, XBCtrlObject object)
             SetWindowText(hWndButton, szBuffer);
         }
 
-        if(g_XBController.GetError())
+        if(g_XBController->GetError())
         {
             goto cleanup;
         }
 
-        if(g_XBController.ConfigPoll(szNewText))
+        if(g_XBController->ConfigPoll(szNewText))
         {
             break;
         }
@@ -312,13 +312,13 @@ VOID ConfigureInput(HWND hWndDlg, HWND hWndButton, XBCtrlObject object)
         Sleep(50);
     }
 
-    if(g_XBController.GetError())
+    if(g_XBController->GetError())
     {
         goto cleanup;
     }
     else
     {
-        g_XBController.ConfigEnd();
+        g_XBController->ConfigEnd();
     }
 
 cleanup:
@@ -328,9 +328,9 @@ cleanup:
 
     /*! update window with status */
     {
-        if(g_XBController.GetError())
+        if(g_XBController->GetError())
         {
-            sprintf(szNewText, "%s", g_XBController.GetError());
+            sprintf(szNewText, "%s", g_XBController->GetError());
         }
 
         SetWindowText(hWndButton, szOrgText);

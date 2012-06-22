@@ -35,7 +35,7 @@
 
 #ifdef _DEBUG_ALLOC
 
-#include "mutex.h"
+#include "Common/Win32/Mutex.h"
 
 // ******************************************************************
 // * prevent name collisions

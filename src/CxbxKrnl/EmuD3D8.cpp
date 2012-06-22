@@ -10130,12 +10130,15 @@ HRESULT WINAPI XTL::EmuIDirect3DDevice8_PersistDisplay()
 	// Other Unreal Engine 2.x games might as well.
 
 #ifndef D3D9
+#ifndef __WINE__
 	IDirect3DSurface8* pBackSurface = NULL;
 	if( SUCCEEDED( g_pD3DDevice8->GetBackBuffer( 0, D3DBACKBUFFER_TYPE_MONO, &pBackSurface ) ) )
+#endif
 #else
 	IDirect3DSurface9* pBackSurface = NULL;
 	if( SUCCEEDED( g_pD3DDevice8->GetBackBuffer( 0, 0, D3DBACKBUFFER_TYPE_MONO, &pBackSurface ) ) )
 #endif
+#if !defined(__WINE__) || defined(D3D9)
 	{
 		D3DXSaveSurfaceToFile( "persisted_surface.bmp", D3DXIFF_BMP, pBackSurface, NULL, NULL );
 		pBackSurface->Release();
@@ -10143,6 +10146,7 @@ HRESULT WINAPI XTL::EmuIDirect3DDevice8_PersistDisplay()
 		DbgPrintf("Persisted display surface saved to persisted_surface.bmp\n");
 	}
 	else
+#endif
 	{
 		EmuWarning("(Temporarily) Not persisting display. Blueshogun can fix this.");
 	}
@@ -10781,10 +10785,13 @@ HRESULT WINAPI XTL::EmuIDirect3DDevice8_GetPersistedSurface(X_D3DSurface **ppSur
 	*ppSurface = new X_D3DSurface;
 
 #ifndef D3D9
+#ifndef __WINE__
 	HRESULT hr = g_pD3DDevice8->CreateImageSurface( 640, 480, D3DFMT_X8R8G8B8, &(*ppSurface)->EmuSurface8 );
+#endif
 #else
 	HRESULT hr = g_pD3DDevice8->CreateOffscreenPlainSurface( 640, 480, D3DFMT_X8R8G8B8, D3DPOOL_MANAGED, &(*ppSurface)->EmuSurface8, NULL );
 #endif
+#if !defined(__WINE__) || defined(D3D9)
 	if( SUCCEEDED( hr ) )
 	{
 		hr = D3DXLoadSurfaceFromFileA( (*ppSurface)->EmuSurface8, NULL, NULL, "persisted_surface.bmp",
@@ -10799,6 +10806,7 @@ HRESULT WINAPI XTL::EmuIDirect3DDevice8_GetPersistedSurface(X_D3DSurface **ppSur
 		}
 	}
 	else
+#endif
 	{
 		EmuWarning( "Could not create temporary surface!" );
 	}
@@ -10822,10 +10830,13 @@ XTL::X_D3DSurface* WINAPI XTL::EmuIDirect3DDevice8_GetPersistedSurface2()
 	X_D3DSurface* pSurface = new X_D3DSurface;
 
 #ifndef D3D9
+#ifndef __WINE__
 	HRESULT hr = g_pD3DDevice8->CreateImageSurface( 640, 480, D3DFMT_X8R8G8B8, &pSurface->EmuSurface8 );
+#endif
 #else
 	HRESULT hr = g_pD3DDevice8->CreateOffscreenPlainSurface( 640, 480, D3DFMT_X8R8G8B8, D3DPOOL_MANAGED, &pSurface->EmuSurface8, NULL );
 #endif
+#if !defined(__WINE__) || defined(D3D9)
 	if( SUCCEEDED( hr ) )
 	{
 		hr = D3DXLoadSurfaceFromFileA( pSurface->EmuSurface8, NULL, NULL, "persisted_surface.bmp",
@@ -10840,6 +10851,7 @@ XTL::X_D3DSurface* WINAPI XTL::EmuIDirect3DDevice8_GetPersistedSurface2()
 		}
 	}
 	else
+#endif
 	{
 		EmuWarning( "Could not create temporary surface!" );
 	}

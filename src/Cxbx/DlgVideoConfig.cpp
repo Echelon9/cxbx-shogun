@@ -57,7 +57,7 @@ static XTL::LPDIRECT3D8 g_pD3D8 = 0;
 static XTL::LPDIRECT3D9 g_pD3D8 = 0;
 #endif
 /*! video configuration */
-static XBVideo g_XBVideo;
+static XBVideo *g_XBVideo = NULL;
 /*! changes flag */
 static BOOL g_bHasChanges = FALSE;
 /*! number of adapters */
@@ -75,7 +75,8 @@ VOID ShowVideoConfig(HWND hwnd)
     g_bHasChanges = FALSE;
 
     /*! retrieve video configuration */
-    g_EmuShared->GetXBVideo(&g_XBVideo);
+    g_XBVideo = (XBVideo *)malloc(sizeof(*g_XBVideo));
+    g_EmuShared->GetXBVideo(g_XBVideo);
 
     /*! initialize direct3d */
     {
@@ -142,18 +143,18 @@ INT_PTR CALLBACK DlgVideoConfigProc(HWND hWndDlg, UINT uMsg, WPARAM wParam, LPAR
             }
 
             /*! activate configured display adapter */
-            SendMessage(g_hDisplayAdapter, CB_SETCURSEL, g_XBVideo.GetDisplayAdapter(), 0);
+            SendMessage(g_hDisplayAdapter, CB_SETCURSEL, g_XBVideo->GetDisplayAdapter(), 0);
 
             /*! refresh UI based on currently selected display adapter */
             RefreshDisplayAdapter();
 
             /*! check appropriate options */
             {
-                SendMessage(GetDlgItem(hWndDlg, IDC_CV_FULLSCREEN), BM_SETCHECK, (WPARAM)g_XBVideo.GetFullscreen(), 0);
+                SendMessage(GetDlgItem(hWndDlg, IDC_CV_FULLSCREEN), BM_SETCHECK, (WPARAM)g_XBVideo->GetFullscreen(), 0);
 
-                SendMessage(GetDlgItem(hWndDlg, IDC_CV_VSYNC), BM_SETCHECK, (WPARAM)g_XBVideo.GetVSync(), 0);
+                SendMessage(GetDlgItem(hWndDlg, IDC_CV_VSYNC), BM_SETCHECK, (WPARAM)g_XBVideo->GetVSync(), 0);
 
-				SendMessage(GetDlgItem(hWndDlg, IDC_CV_HARDWAREYUV), BM_SETCHECK, (WPARAM)g_XBVideo.GetHardwareYUV(), 0);
+				SendMessage(GetDlgItem(hWndDlg, IDC_CV_HARDWAREYUV), BM_SETCHECK, (WPARAM)g_XBVideo->GetHardwareYUV(), 0);
             }
         }
         break;
@@ -187,12 +188,7 @@ INT_PTR CALLBACK DlgVideoConfigProc(HWND hWndDlg, UINT uMsg, WPARAM wParam, LPAR
 
             switch(LOWORD(wParam))
             {
-                case IDC_VC_CANCEL:
-                    EndDialog(hWndDlg, wParam);
-                    break;
-
                 case IDC_VC_ACCEPT:
-                {
                     /*! save video resolution configuration */
                     {
                         HWND hVideoResolution = GetDlgItem(hWndDlg, IDC_VC_VIDEO_RESOLUTION);
@@ -203,30 +199,32 @@ INT_PTR CALLBACK DlgVideoConfigProc(HWND hWndDlg, UINT uMsg, WPARAM wParam, LPAR
 
                         lRet = SendMessage(hVideoResolution, CB_GETLBTEXT, (WPARAM)lRet, (LPARAM)szBuffer);
 
-                        g_XBVideo.SetVideoResolution(szBuffer);
+                        g_XBVideo->SetVideoResolution(szBuffer);
                     }
 
                     /*! save fullscreen/vsync/YUV options */
                     {
                         LRESULT lRet = SendMessage(GetDlgItem(hWndDlg, IDC_CV_FULLSCREEN), BM_GETCHECK, 0, 0);
 
-                        g_XBVideo.SetFullscreen(lRet == BST_CHECKED);
+                        g_XBVideo->SetFullscreen(lRet == BST_CHECKED);
 
                         lRet = SendMessage(GetDlgItem(hWndDlg, IDC_CV_VSYNC), BM_GETCHECK, 0, 0);
 
-                        g_XBVideo.SetVSync(lRet == BST_CHECKED);
+                        g_XBVideo->SetVSync(lRet == BST_CHECKED);
 
 						lRet = SendMessage(GetDlgItem(hWndDlg, IDC_CV_HARDWAREYUV), BM_GETCHECK, 0, 0);
 
-						g_XBVideo.SetHardwareYUV(lRet == BST_CHECKED);
+						g_XBVideo->SetHardwareYUV(lRet == BST_CHECKED);
                     }
 
                     /*! save video configuration */
-                    g_EmuShared->SetXBVideo(&g_XBVideo);
+                    g_EmuShared->SetXBVideo(g_XBVideo);
 
+                case IDC_VC_CANCEL:
+                    free(g_XBVideo);
+                    g_XBVideo = NULL;
                     EndDialog(hWndDlg, wParam);
-                }
-                break;
+                    break;
 
                 case IDC_VC_DISPLAY_ADAPTER:
                 {
@@ -258,7 +256,7 @@ VOID RefreshDisplayAdapter()
 {
     /*! save configured display adapter */
     {
-        DWORD dwOld = g_XBVideo.GetDisplayAdapter();
+        DWORD dwOld = g_XBVideo->GetDisplayAdapter();
 
         DWORD dwDisplayAdapter = (DWORD)SendMessage(g_hDisplayAdapter, CB_GETCURSEL, 0, 0);
 
@@ -266,7 +264,7 @@ VOID RefreshDisplayAdapter()
         {
             g_bHasChanges = TRUE;
 
-            g_XBVideo.SetDisplayAdapter(dwDisplayAdapter);
+            g_XBVideo->SetDisplayAdapter(dwDisplayAdapter);
         }
     }
 
@@ -290,7 +288,7 @@ VOID RefreshDisplayAdapter()
             XTL::D3DCAPS9 Caps;
 #endif
             /*! verify device is available */
-            if(g_pD3D8->GetDeviceCaps(g_XBVideo.GetDisplayAdapter(), devType[d], &Caps) == D3D_OK)
+            if(g_pD3D8->GetDeviceCaps(g_XBVideo->GetDisplayAdapter(), devType[d], &Caps) == D3D_OK)
             {
                 /*! add device to list */
                 SendMessage(g_hDirect3DDevice, CB_ADDSTRING, 0, (LPARAM)szDevType[d]);
@@ -299,7 +297,7 @@ VOID RefreshDisplayAdapter()
     }
 
     /*! activate configured device */
-    SendMessage(g_hDirect3DDevice, CB_SETCURSEL, g_XBVideo.GetDirect3DDevice(), 0);
+    SendMessage(g_hDirect3DDevice, CB_SETCURSEL, g_XBVideo->GetDirect3DDevice(), 0);
 
     /*! refresh based on new device selection */
     RefreshDirect3DDevice();
@@ -313,7 +311,7 @@ VOID RefreshDirect3DDevice()
 
     /*! save configured device */
     {
-        DWORD dwOld = g_XBVideo.GetDirect3DDevice();
+        DWORD dwOld = g_XBVideo->GetDirect3DDevice();
 
         DWORD dwDirect3DDevice = SendMessage(g_hDirect3DDevice, CB_GETCURSEL, 0, 0);
 
@@ -321,7 +319,7 @@ VOID RefreshDirect3DDevice()
         {
             g_bHasChanges = TRUE;
 
-            g_XBVideo.SetDirect3DDevice(dwDirect3DDevice);
+            g_XBVideo->SetDirect3DDevice(dwDirect3DDevice);
         }
     }
 
@@ -333,11 +331,11 @@ VOID RefreshDirect3DDevice()
         /*! enumerate display modes */
         {
 #ifndef D3D9
-            uint32 dwAdapterModeCount = g_pD3D8->GetAdapterModeCount(g_XBVideo.GetDisplayAdapter());
+            uint32 dwAdapterModeCount = g_pD3D8->GetAdapterModeCount(g_XBVideo->GetDisplayAdapter());
 #else
             XTL::D3DDISPLAYMODE d3ddm;
-            g_pD3D8->GetAdapterDisplayMode(g_XBVideo.GetDisplayAdapter(), &d3ddm);
-            uint32 dwAdapterModeCount = g_pD3D8->GetAdapterModeCount(g_XBVideo.GetDisplayAdapter(), d3ddm.Format);
+            g_pD3D8->GetAdapterDisplayMode(g_XBVideo->GetDisplayAdapter(), &d3ddm);
+            uint32 dwAdapterModeCount = g_pD3D8->GetAdapterModeCount(g_XBVideo->GetDisplayAdapter(), d3ddm.Format);
 #endif
 
             SendMessage(g_hVideoResolution, CB_ADDSTRING, 0, (LPARAM)"Automatic (Default)");
@@ -349,11 +347,11 @@ VOID RefreshDirect3DDevice()
 
                 XTL::D3DDISPLAYMODE displayMode;
 #ifndef D3D9
-                g_pD3D8->EnumAdapterModes(g_XBVideo.GetDisplayAdapter(), v, &displayMode);
+                g_pD3D8->EnumAdapterModes(g_XBVideo->GetDisplayAdapter(), v, &displayMode);
 #else
                 XTL::D3DDISPLAYMODE d3ddm;
-                g_pD3D8->GetAdapterDisplayMode(g_XBVideo.GetDisplayAdapter(), &d3ddm);
-                g_pD3D8->EnumAdapterModes(g_XBVideo.GetDisplayAdapter(), d3ddm.Format, v, &displayMode);
+                g_pD3D8->GetAdapterDisplayMode(g_XBVideo->GetDisplayAdapter(), &d3ddm);
+                g_pD3D8->EnumAdapterModes(g_XBVideo->GetDisplayAdapter(), d3ddm.Format, v, &displayMode);
 #endif
                 switch(displayMode.Format)
                 {
@@ -388,7 +386,7 @@ VOID RefreshDirect3DDevice()
                     }
 
                     /*! if current mode is the configured video resolution, activate it in the list */
-                    if(strcmp(szBuffer, g_XBVideo.GetVideoResolution()) == 0)
+                    if(strcmp(szBuffer, g_XBVideo->GetVideoResolution()) == 0)
                     {
                         dwVideoResolution = v+1;
                     }

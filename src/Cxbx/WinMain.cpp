@@ -45,19 +45,9 @@ extern int __argc;
 extern char **__argv;
 #endif
 
-#ifdef __WINE__
-namespace NtDll
-{
-    #include "CxbxKrnl/EmuNtDll.h"
-};
-#endif
-
 /*! program entry point */
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
-#ifdef __WINE__
-    NtDll::InitializeNtDll();
-#endif
     /*! verify Cxbx.dll is the same version as Cxbx.exe */
     if(!CxbxKrnlVerifyVersion(_CXBX_VERSION))
     {
