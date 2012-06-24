@@ -42,6 +42,10 @@
 #include <windows.h>
 #include <cstdio>
 
+#ifdef __GNUC__
+#include <new>
+#endif
+
 #ifdef g_EmuShared
 #undef g_EmuShared
 #endif
@@ -120,9 +124,8 @@ CXBXKRNL_API void EmuShared::Init()
     // ******************************************************************
     if(init)
     {
-#ifdef __GNUC__ // error: cannot call constructor ‘EmuShared::EmuShared’ directly
-        g_EmuShared->m_XBController.Load("Software\\Cxbx\\XBController");
-        g_EmuShared->m_XBVideo.Load("Software\\Cxbx\\XBVideo");
+#ifdef __GNUC__
+        new (g_EmuShared) EmuShared();
 #else
         g_EmuShared->EmuShared::EmuShared();
 #endif
@@ -140,8 +143,11 @@ CXBXKRNL_API void EmuShared::Cleanup()
 
     if(g_EmuSharedRefCount == 0)
     {
+#ifdef __GNUC__
+        g_EmuShared->~EmuShared();
+#else
         g_EmuShared->EmuShared::~EmuShared();
-
+#endif
         UnmapViewOfFile(g_EmuShared);
     }
 }

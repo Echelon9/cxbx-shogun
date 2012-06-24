@@ -85,7 +85,11 @@ uint32 g_DeadToRightsHack[2] = {0};
 static int ExitException(LPEXCEPTION_POINTERS e);
 
 // Dll entry point, exit point, ...
+#ifndef __WINE__
 BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
+#else
+extern "C" CXBXKRNL_API BOOL CxbxDllInitialize(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
+#endif
 {
     static HINSTANCE hInitInstance = NULL;
 

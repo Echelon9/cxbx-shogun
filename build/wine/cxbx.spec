@@ -1,3 +1,4 @@
+@ cdecl CxbxDllInitialize(long long ptr)
 @ cdecl CxbxKrnlVerifyVersion(str)
 @ cdecl CxbxKrnlInit(ptr ptr ptr ptr long str ptr long ptr)
 @ varargs CxbxKrnlCleanup(str)

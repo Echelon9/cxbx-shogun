@@ -48,6 +48,10 @@ extern char **__argv;
 /*! program entry point */
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
+#ifdef __WINE__
+    CxbxDllInitialize(hInstance, DLL_PROCESS_ATTACH, NULL);
+#endif
+
     /*! verify Cxbx.dll is the same version as Cxbx.exe */
     if(!CxbxKrnlVerifyVersion(_CXBX_VERSION))
     {
@@ -90,6 +94,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     /*! cleanup shared memory */
     EmuShared::Cleanup();
+
+#ifdef __WINE__
+    CxbxDllInitialize(hInstance, DLL_PROCESS_DETACH, NULL);
+#endif
 
     return 0;
 }

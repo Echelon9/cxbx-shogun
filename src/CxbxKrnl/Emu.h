@@ -42,6 +42,10 @@
 #include <multimon.h>
 #endif
 
+#ifdef __WINE__
+extern "C" CXBXKRNL_API BOOL CxbxDllInitialize(HINSTANCE, DWORD, LPVOID);
+#endif
+
 // print out a warning message to the kernel debug log file
 #ifdef _DEBUG_WARNINGS
 extern "C" CXBXKRNL_API void NTAPI EmuWarning(const char *szWarningMessage, ...);
