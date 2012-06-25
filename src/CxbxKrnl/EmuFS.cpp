@@ -118,6 +118,8 @@ void EmuGenerateFS(Xbe::TLS *pTLS, void *pTLSData)
         "movl %%eax, %1"
         : "=m" (OrgFS),
           "=m" (OrgNtTib)
+        :
+        : "eax"
     );
 #else
     __asm
@@ -147,12 +149,13 @@ void EmuGenerateFS(Xbe::TLS *pTLS, void *pTLSData)
 #ifdef __GNUC__
     __asm__ __volatile__(
         "movw %0, %%ax\n\t"
-        "movb $0, %%bh\n\t"
-
         "movw %%ax, %%fs:0x14\n\t"
-        "movb %%bh, %%fs:0x16"
+
+        "movb $0, %%al\n\t"
+        "movb %%al, %%fs:0x16"
         :
         : "m" (NewFS)
+        : "eax"
     );
 #else
     __asm
@@ -198,12 +201,13 @@ void EmuGenerateFS(Xbe::TLS *pTLS, void *pTLSData)
 #ifdef __GNUC__
     __asm__ __volatile__(
         "movw %0, %%ax\n\t"
-        "movb $1, %%bh\n\t"
-
         "movw %%ax, %%fs:0x14\n\t"
-        "movb %%bh, %%fs:0x16"
+
+        "movb $1, %%al\n\t"
+        "movb %%al, %%fs:0x16"
         :
         : "m" (OrgFS)
+        : "eax"
     );
 #else
     __asm
@@ -223,6 +227,7 @@ void EmuGenerateFS(Xbe::TLS *pTLS, void *pTLSData)
         "movl %%eax, %%fs:0x04"
         :
         : "m" (pNewTLS)
+        : "eax"
     );
 #else
     __asm
@@ -248,6 +253,8 @@ void EmuCleanupFS()
         "movw %%fs:0x14, %%ax\n\t" // FS.ArbitraryUserPointer
         "movw %%ax, %0"
         : "=m" (wSwapFS)
+        :
+        : "eax"
     );
 #else
     __asm
@@ -270,6 +277,8 @@ void EmuCleanupFS()
         "movl %%fs:0x04, %%eax\n\t"
         "movl %%eax, %0"
         : "=m" (pTLSData)
+        :
+        : "eax"
     );
 #else
     __asm

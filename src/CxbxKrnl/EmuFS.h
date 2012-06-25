@@ -61,6 +61,8 @@ static inline bool EmuIsXboxFS()
         "movb %%fs:0x16, %%ah\n\t"
         "movb %%ah, %0"
         : "=q" (chk)
+        :
+        : "eax"
     );
 #else
     __asm
@@ -100,8 +102,11 @@ static inline void EmuSwapFS()
 
 #ifdef __GNUC__
     __asm__ __volatile__(
-        "movw %fs:0x14, %ax\n\t"
-        "movw %ax, %fs"
+        "movw %%fs:0x14, %%ax\n\t"
+        "movw %%ax, %%fs"
+        :
+        :
+        : "eax"
     );
 #else
     __asm

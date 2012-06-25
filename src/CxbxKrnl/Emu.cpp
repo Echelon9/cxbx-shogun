@@ -787,7 +787,7 @@ extern int EmuException(LPEXCEPTION_POINTERS e)
         if(e->ExceptionRecord->ExceptionCode == 0x80000003)
         {
             sprintf(buffer,
-                "Recieved Breakpoint Exception (int 3) @ EIP := 0x%.08X\n"
+                "Received Breakpoint Exception (int 3) @ EIP := 0x%.08X\n"
                 "\n"
                 "  Press Abort to terminate emulation.\n"
                 "  Press Retry to debug.\n"

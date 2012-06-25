@@ -46,10 +46,16 @@
 // ******************************************************************
 // * prevent name collisions
 // ******************************************************************
+#ifndef __WINE__
 namespace NtDll
 {
     #include "EmuNtDll.h"
 };
+#define LDT_ENTRY_NUM(x) ((((x) + 1) << 3) | 7)
+#else
+#include <wine/library.h>
+#define LDT_ENTRY_NUM(x) ((((x) + 512) << 3) | 7)
+#endif
 
 // ******************************************************************
 // * Table of free LDT entries
@@ -69,7 +75,7 @@ void EmuInitLDT()
     InitializeCriticalSection(&EmuLDTLock);
 
     for(uint32 v=0;v<MAXIMUM_XBOX_THREADS;v++)
-        FreeLDTEntries[v] = (uint16)((v*8) + 7 + 8);
+        FreeLDTEntries[v] = (uint16)LDT_ENTRY_NUM(v);
 }
 
 // ******************************************************************
@@ -77,8 +83,11 @@ void EmuInitLDT()
 // ******************************************************************
 uint16 EmuAllocateLDT(uint32 dwBaseAddr, uint32 dwLimit)
 {
+#ifndef __WINE__
     NtDll::LDT_ENTRY LDTEntry;
-
+#else
+    LDT_ENTRY LDTEntry;
+#endif
     int x=0;
 
     EnterCriticalSection(&EmuLDTLock);
@@ -127,7 +136,11 @@ uint16 EmuAllocateLDT(uint32 dwBaseAddr, uint32 dwLimit)
     // * Allocate selector
     // ******************************************************************
     {
-        if(!NT_SUCCESS(NtDll::_NtSetLdtEntries((x*8)+7+8, LDTEntry, 0, LDTEntry)))
+#ifndef __WINE__
+        if(!NT_SUCCESS(NtDll::_NtSetLdtEntries(LDT_ENTRY_NUM(x), LDTEntry, 0, LDTEntry)))
+#else
+        if(wine_ldt_set_entry(LDT_ENTRY_NUM(x), &LDTEntry) < 0)
+#endif
         {
             LeaveCriticalSection(&EmuLDTLock);
 
@@ -141,7 +154,7 @@ uint16 EmuAllocateLDT(uint32 dwBaseAddr, uint32 dwLimit)
 
     FreeLDTEntries[x] = 0;
 
-    return (x*8)+7+8;
+    return LDT_ENTRY_NUM(x);
 }
 
 // ******************************************************************
@@ -149,14 +162,19 @@ uint16 EmuAllocateLDT(uint32 dwBaseAddr, uint32 dwLimit)
 // ******************************************************************
 void EmuDeallocateLDT(uint16 wSelector)
 {
+#ifndef __WINE__
     NtDll::LDT_ENTRY LDTEntry;
-
+#else
+    LDT_ENTRY LDTEntry;
+#endif
     EnterCriticalSection(&EmuLDTLock);
 
     ZeroMemory(&LDTEntry, sizeof(LDTEntry));
-
+#ifndef __WINE__
     NtDll::_NtSetLdtEntries(wSelector, LDTEntry, 0, LDTEntry);
-
+#else
+    wine_ldt_set_entry(wSelector, &LDTEntry);
+#endif
     FreeLDTEntries[(wSelector >> 3)-1] = wSelector;
 
     LeaveCriticalSection(&EmuLDTLock);

@@ -1394,7 +1394,7 @@ VOID WINAPI XTL::EmuXapiFiberStartup(DWORD dwDummy)
 #ifdef __GNUC__
     __asm__ __volatile__(
         "movl %0, %%eax\n\t"
-        "movl %%fs:4, %%ecx\n\t"
+        "movl %%fs:0x04, %%ecx\n\t"
         "movl (%%ecx,%%eax,4), %%eax\n\t"
         "movl 8(%%eax), %%eax\n\t"
         "pushl (%%eax)\n\t"
@@ -1402,6 +1402,7 @@ VOID WINAPI XTL::EmuXapiFiberStartup(DWORD dwDummy)
         :
         : "r" (TlsIndex),
           "r" (func)
+        : "eax", "ecx"
     );
 #else
 	__asm 
@@ -2711,7 +2712,6 @@ BOOL WINAPI XTL::EmuVirtualFree
             GetCurrentThreadId(), lpAddress, dwSize, dwFreeType);
 
 	BOOL bRet = VirtualFreeEx( GetCurrentProcess(), lpAddress, dwSize, dwFreeType );
-
 
 	EmuSwapFS();	// Xbox FS
 

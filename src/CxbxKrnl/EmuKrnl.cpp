@@ -195,10 +195,11 @@ static unsigned int WINAPI PCSTProxy
             "leal -4(%%esp), %%ebp\n\t"
             "jmp *%%esi"
             :
-            : "m" (StartRoutine),
-              "m" (StartContext2),
-              "m" (StartContext1),
+            : "r" (StartRoutine),
+              "r" (StartContext2),
+              "r" (StartContext1),
               "r" (&&callComplete)
+            : "esi"
         );
 #else
         __asm

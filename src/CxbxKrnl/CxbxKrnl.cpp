@@ -276,7 +276,7 @@ extern "C" CXBXKRNL_API void CxbxKrnlInit
             // undo reserve_dos_area() by libs/wine/mmap.c
             wine_mmap_remove_reserved_area(NULL, 0x110000, 1);
             if ((addr = wine_anon_mmap(addr, sz, PROT_READ | PROT_WRITE | PROT_EXEC, 0)) == (void *)BASE_ADDR) {
-                wine_mmap_add_reserved_area(addr, sz);
+                wine_mmap_add_reserved_area(NULL, (size_t)addr + sz);
                 printf("EmuMain (0x%X): Wine -> got mmap at 0x%x\n", GetCurrentThreadId(), addr);
                 fread(addr, sz, 1, fh);
                 printf("EmuMain (0x%X): Wine -> done with .exe \"relocation\"\n", GetCurrentThreadId());
