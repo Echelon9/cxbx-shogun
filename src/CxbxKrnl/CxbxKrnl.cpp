@@ -59,12 +59,6 @@ namespace NtDll
 #ifdef __GNUC__
 #include <seh.h>
 #endif
-#ifdef __WINE__
-#include <wine/library.h>
-#define _SYS_MMAN_H
-#include <bits/mman.h>
-#undef _SYS_MMAN_H
-#endif
 
 /*! thread local storage */
 extern CXBXKRNL_API Xbe::TLS *CxbxKrnl_TLS = NULL;
@@ -255,39 +249,7 @@ extern "C" CXBXKRNL_API void CxbxKrnlInit
         printf("EmuMain (0x%X): Debug Trace Disabled.\n", GetCurrentThreadId());
         #endif
     }
-#ifdef __WINE__
-    //
-    // ensure the .exe is loaded at xbe base address 0x10000
-    //
-
-    {
-#define BASE_ADDR 0x10000
-        FILE *fh;
-        size_t sz;
-        void *addr = (void *)BASE_ADDR;
-
-        if (GetModuleHandle(NULL) != addr) {
-            printf("EmuMain (0x%X): Wine -> %s (0x%x) is not loaded at xbe base address 0x%x; \"relocating\"\n", GetCurrentThreadId(), __argv[0], GetModuleHandle(NULL), BASE_ADDR);
-            fh = fopen(__argv[0], "r");
-            fseek(fh, 0, SEEK_END);
-            sz = ftell(fh);
-            rewind(fh);
-            printf("EmuMain (0x%X): Wine -> %s: %lu bytes\n", GetCurrentThreadId(), __argv[0], sz);
-            // undo reserve_dos_area() by libs/wine/mmap.c
-            wine_mmap_remove_reserved_area(NULL, 0x110000, 1);
-            if ((addr = wine_anon_mmap(addr, sz, PROT_READ | PROT_WRITE | PROT_EXEC, 0)) == (void *)BASE_ADDR) {
-                wine_mmap_add_reserved_area(NULL, (size_t)addr + sz);
-                printf("EmuMain (0x%X): Wine -> got mmap at 0x%x\n", GetCurrentThreadId(), addr);
-                fread(addr, sz, 1, fh);
-                printf("EmuMain (0x%X): Wine -> done with .exe \"relocation\"\n", GetCurrentThreadId());
-            } else {
-                printf("EmuMain (0x%X): Wine -> mmap failed with 0x%x != 0x%x\n", GetCurrentThreadId(), addr, BASE_ADDR);
-            }
-            fclose(fh);
-        }
-#undef BASE_ADDR
-    }
-#endif
+#ifndef __WINE__
     //
     // load the necessary pieces of XbeHeader
     //
@@ -309,7 +271,7 @@ extern "C" CXBXKRNL_API void CxbxKrnlInit
 
         memcpy((void*)pXbeHeader->dwCertificateAddr, &((uint08*)pXbeHeader)[pXbeHeader->dwCertificateAddr - 0x00010000], sizeof(Xbe::Certificate));
     }
-
+#endif
     //
     // initialize current directory
     //
@@ -537,8 +499,6 @@ extern "C" CXBXKRNL_API void CxbxKrnlInit
 #ifdef __WINE__
     CxbxDllInitialize(GetModuleHandle(NULL), DLL_PROCESS_DETACH, NULL);
 #endif
-
-    return;
 }
 
 extern "C" CXBXKRNL_API void CxbxKrnlCleanup(const char *szErrorMessage, ...)
@@ -588,8 +548,6 @@ extern "C" CXBXKRNL_API void CxbxKrnlCleanup(const char *szErrorMessage, ...)
         SendMessage(CxbxKrnl_hEmuParent, WM_PARENTNOTIFY, WM_DESTROY, 0);
 
     TerminateProcess(GetCurrentProcess(), 0);
-
-    return;
 }
 
 extern "C" CXBXKRNL_API void CxbxKrnlRegisterThread(HANDLE hThread)

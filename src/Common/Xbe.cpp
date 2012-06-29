@@ -60,7 +60,7 @@ Xbe::Xbe(const char *x_szFilename)
     if(XbeFile == 0)
     {
         SetError("Could not open Xbe file.", true);
-        return;
+        goto cleanup;
     }
 
     printf("OK\n");
@@ -328,7 +328,8 @@ cleanup:
         printf("Xbe::Xbe: ERROR -> %s\n", GetError());
     }
 
-    fclose(XbeFile);
+    if(XbeFile != 0)
+        fclose(XbeFile);
 
     return;
 }

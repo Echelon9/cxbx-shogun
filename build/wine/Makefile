@@ -4,12 +4,12 @@ SRCDIR                = .
 SUBDIRS               = libseh d3dx8 jpeg-8d
 DLLS                  = cxbx.dll
 LIBS                  =
-EXES                  = cxbx.exe
+EXES                  = cxbx.exe loader.exe
 
 ### Common settings
 
 TARGETFLAGS           = -m32
-CEXTRA                =
+CEXTRA                = -g -O0 -Wall -Wextra
 CXXEXTRA              = $(TARGETFLAGS) -mno-cygwin -g -O0 -W -Wno-sign-compare -Wno-missing-field-initializers -Wno-ignored-qualifiers -Wno-write-strings -fpermissive -isystem /usr/local/include/wine/windows -isystem /usr/include/wine/windows
 RCEXTRA               =
 DEFINES               = -DNOMINMAX -D_GLIBCXX_USE_C99_DYNAMIC -DWIN32 -D_DEBUG -D_WINDOWS -D_CRT_SECURE_NO_WARNINGS# -DD3D9
@@ -61,7 +61,7 @@ cxbx_dll_CXX_SRCS     = ../../src/Common/Error.cpp \
 			../../src/CxbxKrnl/KernelThunk.cpp \
 			../../src/CxbxKrnl/ResourceTracker.cpp
 cxbx_dll_RC_SRCS      =
-cxbx_dll_LDFLAGS      = -shared $(TARGETFLAGS) -mno-cygwin -mwindows -g -O0 -Wl,--image-base,0x7c000000 $(cxbx_dll_MODULE:.dll=.spec)
+cxbx_dll_LDFLAGS      = -shared $(TARGETFLAGS) -mno-cygwin -mwindows -g -O0 $(cxbx_dll_MODULE:.dll=.spec)
 cxbx_dll_ARFLAGS      =
 cxbx_dll_DLL_PATH     = -Ld3dx8
 cxbx_dll_DLLS         = dxerr8 xinput ws2_32 dsound winmm ddraw d3dx8 d3d8 dinput dinput8 dxguid uuid dbghelp
@@ -92,11 +92,25 @@ cxbx_exe_LIBRARY_PATH =
 cxbx_exe_LIBRARIES    = jpeg-8d/libjpeg.a
 cxbx_exe_OBJS         = $(cxbx_exe_C_SRCS:.c=.o) $(cxbx_exe_CXX_SRCS:.cpp=.o) $(cxbx_exe_RC_SRCS:.rc=.res)
 
+### loader.exe sources and settings
+
+loader_exe_MODULE       = loader.exe
+loader_exe_C_SRCS       = loader.c
+loader_exe_CXX_SRCS     =
+loader_exe_RC_SRCS      =
+loader_exe_LDFLAGS      = $(TARGETFLAGS) -g -O0
+loader_exe_ARFLAGS      =
+loader_exe_DLL_PATH     = -L.
+loader_exe_DLLS         = cxbx
+loader_exe_LIBRARY_PATH =
+loader_exe_LIBRARIES    =
+loader_exe_OBJS         = $(loader_exe_C_SRCS:.c=.o) $(loader_exe_CXX_SRCS:.cpp=.o) $(loader_exe_RC_SRCS:.rc=.res)
+
 ### Global source lists
 
-C_SRCS                = $(cxbx_dll_C_SRCS) $(cxbx_exe_C_SRCS)
-CXX_SRCS              = $(cxbx_dll_CXX_SRCS) $(cxbx_exe_CXX_SRCS)
-RC_SRCS               = $(cxbx_dll_RC_SRCS) $(cxbx_exe_RC_SRCS)
+C_SRCS                = $(cxbx_dll_C_SRCS) $(cxbx_exe_C_SRCS) $(loader_exe_C_SRCS)
+CXX_SRCS              = $(cxbx_dll_CXX_SRCS) $(cxbx_exe_CXX_SRCS) $(loader_exe_CXX_SRCS)
+RC_SRCS               = $(cxbx_dll_RC_SRCS) $(cxbx_exe_RC_SRCS) $(loader_exe_RC_SRCS)
 
 ### Tools
 
@@ -161,4 +175,7 @@ lib$(cxbx_dll_MODULE:.dll=.def): $(cxbx_dll_MODULE:.dll=.spec)
 
 $(cxbx_exe_MODULE): $(cxbx_exe_OBJS) $(cxbx_dll_MODULE).so lib$(cxbx_dll_MODULE:.dll=.def)
 	$(CXX) $(cxbx_exe_LDFLAGS) -o $@ $(cxbx_exe_OBJS) $(DEFLIB) $(cxbx_exe_DLL_PATH) $(cxbx_exe_DLLS:%=-l%) $(cxbx_exe_LIBRARY_PATH) $(cxbx_exe_LIBRARIES)
+
+$(loader_exe_MODULE): $(loader_exe_OBJS) $(cxbx_dll_MODULE).so lib$(cxbx_dll_MODULE:.dll=.def)
+	$(CC) $(loader_exe_LDFLAGS) -o $@ $(loader_exe_OBJS) $(DEFLIB) $(loader_exe_DLL_PATH) $(loader_exe_DLLS:%=-l%) $(loader_exe_LIBRARY_PATH) $(loader_exe_LIBRARIES)
 

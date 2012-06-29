@@ -1,0 +1,37 @@
+diff --git a/dlls/ntdll/virtual.c b/dlls/ntdll/virtual.c
+index 806b7a9..52051e5 100644
+--- a/dlls/ntdll/virtual.c
++++ b/dlls/ntdll/virtual.c
+@@ -1411,7 +1411,7 @@ static int alloc_virtual_heap( void *base, size_t size, void *arg )
+  */
+ void virtual_init(void)
+ {
+-    const char *preload;
++    const char *env;
+     void *heap_base;
+     size_t size;
+     struct file_view *heap_view;
+@@ -1425,15 +1425,21 @@ void virtual_init(void)
+     while ((1 << page_shift) != page_size) page_shift++;
+     user_space_limit = working_set_limit = address_space_limit = (void *)~page_mask;
+ #endif  /* page_mask */
+-    if ((preload = getenv("WINEPRELOADRESERVE")))
++    if ((env = getenv("WINEPRELOADRESERVE")))
+     {
+         unsigned long start, end;
+-        if (sscanf( preload, "%lx-%lx", &start, &end ) == 2)
++        if (sscanf( env, "%lx-%lx", &start, &end ) == 2)
+         {
+             preload_reserve_start = (void *)start;
+             preload_reserve_end = (void *)end;
+         }
+     }
++    if ((env = getenv("WINEADDRSPACESTART")))
++    {
++        unsigned long start;
++        if (sscanf( env, "%lx", &start ) == 1 && (void *)start > address_space_start)
++            address_space_start = (void *)start;
++    }
+ 
+     /* try to find space in a reserved area for the virtual heap */
+     if (!wine_mmap_enum_reserved_areas( alloc_virtual_heap, &heap_base, 1 ))

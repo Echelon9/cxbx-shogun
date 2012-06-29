@@ -1828,6 +1828,7 @@ void WndMain::StartEmulation(EnumAutoConvert x_AutoConvert, HWND hwndParent)
 {
     char szBuffer[260];
 
+#ifndef __WINE__
     // convert xbe to exe, if necessary
     if(m_ExeFilename[0] == '\0' || m_bExeChanged)
     {
@@ -1866,12 +1867,14 @@ void WndMain::StartEmulation(EnumAutoConvert x_AutoConvert, HWND hwndParent)
                 return;
         }
     }
+#endif
 
     // register xbe path with Cxbx.dll
     g_EmuShared->SetXbePath(m_Xbe->m_szPath);
 
     // shell exe
     {
+#ifndef __WINE__
         GetModuleFileName(NULL, szBuffer, 260);
 
         sint32 spot=-1;
@@ -1887,6 +1890,25 @@ void WndMain::StartEmulation(EnumAutoConvert x_AutoConvert, HWND hwndParent)
             szBuffer[spot] = '\0';
 
         if((int)ShellExecute(NULL, "open", m_ExeFilename, NULL, szBuffer, SW_SHOWDEFAULT) <= 32)
+#else
+        WCHAR *wszPath;
+        char *pszUnixPath;
+
+        wszPath = (WCHAR *)HeapAlloc(GetProcessHeap(), 0, (strlen(m_XbeFilename)+1)*sizeof(WCHAR));
+        MultiByteToWideChar(CP_ACP, 0, m_XbeFilename, -1, wszPath, strlen(m_XbeFilename)+1);
+
+        if((pszUnixPath = wine_get_unix_file_name(wszPath)))
+        {
+            __gnu_cxx::snprintf(szBuffer, sizeof(szBuffer), "loader.sh %s %p %u %s", pszUnixPath, hwndParent, m_KrnlDebug, m_KrnlDebugFilename);
+            HeapFree(GetProcessHeap(), 0, pszUnixPath);
+        }
+        else
+            *szBuffer = 0;
+
+        HeapFree(GetProcessHeap(), 0, wszPath);
+
+        if(!*szBuffer || system(szBuffer) < 0)
+#endif
         {
             m_bCanStart = true;
             MessageBox(m_hwnd, "Emulation failed.\n\nTry converting again. If this message repeats, the Xbe is not supported.", "Cxbx", MB_ICONSTOP | MB_OK);
