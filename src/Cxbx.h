@@ -35,10 +35,14 @@
 #define CXBX_H
 
 /*! CxbxKrnl exports, others import */
+#ifndef __WINE__
 #ifndef _CXBXKRNL_INTERNAL
 #define CXBXKRNL_API __declspec(dllimport)
 #else
 #define CXBXKRNL_API __declspec(dllexport)
+#endif
+#else
+#define CXBXKRNL_API
 #endif
 
 /*! \name primitive typedefs */

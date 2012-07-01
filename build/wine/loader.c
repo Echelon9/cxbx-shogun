@@ -15,6 +15,8 @@ uint32_t *_CxbxKrnl_KernelThunkTable(void);
 void CxbxKrnlInit(void *, void *, void *, void *, int, char *, void *, int, void *);
 
 #define PACK                __attribute__((__packed__))
+#define PAGESIZE            0x1000
+#define PAGEMASK            (PAGESIZE - 1)
 
 #define XBE_BASE_ADDR       0x10000
 #define XBE_MAGIC           "XBEH"
@@ -105,12 +107,15 @@ typedef struct {
 
 int
 main(int argc, char **argv) {
-    XbeHeader *xbeh = (void *)XBE_BASE_ADDR;
+    XbeHeader *xbeh;
+    XbeSectionHeader *xbes;
     void *hwnd;
     char *env;
     unsigned long start;
-    size_t sz;
+    void *addr;
     int fd;
+    size_t ctr;
+    int ret;
 
     if (argc < 3) {
         fprintf(stderr, "usage: %s <xbe unix filepath> <window handle> [debug mode] [debug filepath]\n", argv[0]);
@@ -136,40 +141,20 @@ main(int argc, char **argv) {
         fprintf(stderr, "error: open: %s: %s\n", argv[1], strerror(errno));
         return 1;
     }
-    if (start - XBE_BASE_ADDR < (sz = lseek(fd, 0, SEEK_END))) {
-        fprintf(stderr, "error: WINEADDRSPACESTART - XBE_BASE_ADDR < xbe size (0x%x); consider increasing WINEADDRSPACESTART\n", sz);
-        close(fd);
-        return 1;
-    }
 
     /* 0x010000-0x110000 was dos area by reserve_dos_area() */
     /* 0x232000-0x330000 was wine thread/signal stack by virtual_alloc_thread_stack() */
     wine_mmap_remove_reserved_area(NULL, start, 1);
-    if (mmap((void *)XBE_BASE_ADDR,
-        sz,
-        PROT_READ | PROT_WRITE | PROT_EXEC,
-        MAP_PRIVATE | MAP_FIXED | MAP_NORESERVE,
-        fd, 0) != (void *)XBE_BASE_ADDR) {
-        fprintf(stderr, "error: could not mmap xbe at 0x%x\n", XBE_BASE_ADDR);
+    addr = (void *)XBE_BASE_ADDR;
+    if (mmap(addr, PAGESIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_FIXED | MAP_NORESERVE, fd, 0) != addr) {
+        fprintf(stderr, "error: could not mmap first page of xbe at %p\n", addr);
         close(fd);
         return 1;
     }
-    mmap((void *)XBE_BASE_ADDR + sz,
-        start - XBE_BASE_ADDR - sz,
-        PROT_READ | PROT_WRITE,
-        MAP_PRIVATE | MAP_ANONYMOUS | MAP_FIXED | MAP_NORESERVE,
-        -1, 0);
-    close(fd);
-    wine_mmap_add_reserved_area(NULL, start);
-
-    {
-        char buf[32];
-        snprintf(buf, sizeof(buf), "cat /proc/%hu/maps", getpid());
-        system(buf);
-    }
-
+    xbeh = addr;
     if (xbeh->dwMagic != *(uint32_t *)XBE_MAGIC) {
         fprintf(stderr, "error: invalid xbe magic: 0x%.08x\n", xbeh->dwMagic);
+        close(fd);
         return 1;
     }
     xbeh->dwEntryAddr ^=
@@ -183,11 +168,73 @@ main(int argc, char **argv) {
 
     printf("xbe entry: 0x%x | thunk table: 0x%x\n", xbeh->dwEntryAddr, xbeh->dwKernelImageThunkAddr);
 
+    xbes = (void *)xbeh->dwSectionHeadersAddr;
     {
-        XbeSectionHeader *xbes = (void *)xbeh->dwSectionHeadersAddr;
+        uint32_t vaddr;
+        uint16_t vmask;
+        uint32_t vsize;
+        uint32_t raddr;
+        uint32_t rsize;
+        int prot;
+        int flag;
+
+        for (ctr = 0; ctr < xbeh->dwSections; ++ctr) {
+            vaddr = xbes[ctr].dwVirtualAddr;
+            vmask = vaddr & PAGEMASK;
+            vsize = xbes[ctr].dwVirtualSize;
+            raddr = xbes[ctr].dwRawAddr;
+            rsize = xbes[ctr].dwSizeofRaw;
+
+            printf("mmap: section %2u | "
+                "name %10s | "
+                "virtual: address 0x%.08x size 0x%.08x | "
+                "raw: address 0x%.08x size 0x%.08x\n",
+                ctr, (char *)xbes[ctr].dwSectionNameAddr, vaddr, vsize, raddr, rsize);
+
+            addr = (void *)vaddr - vmask;
+            prot = PROT_READ | PROT_WRITE | PROT_EXEC; // TODO section protection
+            flag = MAP_PRIVATE | MAP_FIXED | MAP_NORESERVE;
+            flag |= (vmask) ? MAP_ANONYMOUS : 0;
+            if (mmap(addr, vsize + vmask, prot, flag, (!vmask) ? fd : -1, (!vmask) ? raddr : 0) != addr) {
+                fprintf(stderr, "error: could not mmap xbe section %u at %p\n", ctr, addr);
+                close(fd);
+                return 1;
+            }
+        }
+        for (ctr = 0; ctr < xbeh->dwSections; ++ctr) {
+            vaddr = xbes[ctr].dwVirtualAddr;
+            vmask = vaddr & PAGEMASK;
+            vsize = xbes[ctr].dwVirtualSize;
+            raddr = xbes[ctr].dwRawAddr;
+            rsize = xbes[ctr].dwSizeofRaw;
+
+            if (vmask) {
+                printf("aligning section %u to a page boundary by 0x%x\n", ctr, vmask);
+                if (lseek(fd, raddr, SEEK_SET) != (int)raddr) {
+                    fprintf(stderr, "error: lseek: %s: %s\n", argv[1], strerror(errno));
+                    close(fd);
+                    return 1;
+                }
+                if ((ret = read(fd, (void *)vaddr, rsize)) != (int)rsize) {
+                    fprintf(stderr, "error: read: %s: %s\n", argv[1], (ret < 0) ? strerror(errno) : "short read");
+                    close(fd);
+                    return 1;
+                }
+            }
+        }
+    }
+    close(fd);
+    wine_mmap_add_reserved_area(NULL, start);
+
+    {
+        char buf[32];
+        snprintf(buf, sizeof(buf), "cat /proc/%hu/maps", getpid());
+        system(buf);
+    }
+
+    {
         uint32_t *ktt = (void *)xbeh->dwKernelImageThunkAddr;
         uint32_t t;
-        size_t ctr;
 
         for (ctr = 0; ctr < xbeh->dwSections; ++ctr) {
             if ((uint32_t)ktt < xbes[ctr].dwVirtualAddr ||
@@ -216,8 +263,6 @@ main(int argc, char **argv) {
         xbeh,                                       /* pXbeHeader */
         xbeh->dwSizeofHeaders,                      /* dwXbeHeaderSize */
         (void *)xbeh->dwEntryAddr);                 /* Entry */
-
-    munmap((void *)XBE_BASE_ADDR, start - XBE_BASE_ADDR);
 
     return 0;
 }

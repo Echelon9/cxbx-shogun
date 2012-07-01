@@ -165,7 +165,7 @@ static unsigned int WINAPI PCSTProxy
 			if(pfnNotificationRoutine == NULL)
 				continue;
 
-			DbgPrintf("EmKrnl (0x%X): Calling pfnNotificationRoutine[%d] (0x%.08X)\n", g_iThreadNotificationCount, GetCurrentThreadId(), pfnNotificationRoutine);
+			DbgPrintf("EmuKrnl (0x%X): Calling pfnNotificationRoutine[%d] (0x%.08X)\n", g_iThreadNotificationCount, GetCurrentThreadId(), pfnNotificationRoutine);
 
 			EmuSwapFS();   // Xbox FS
 
@@ -201,6 +201,7 @@ static unsigned int WINAPI PCSTProxy
               "r" (&&callComplete)
             : "esi"
         );
+callComplete:;
 #else
         __asm
         {
@@ -225,7 +226,9 @@ static unsigned int WINAPI PCSTProxy
     __seh_end_except
 #endif
 
+#ifndef __GNUC__
 callComplete:
+#endif
 
     EmuSwapFS();    // Win2k/XP FS
 
