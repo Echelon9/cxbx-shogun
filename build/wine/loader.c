@@ -171,7 +171,7 @@ main(int argc, char **argv) {
     xbes = (void *)xbeh->dwSectionHeadersAddr;
     {
         uint32_t vaddr;
-        uint16_t vmask;
+        uint32_t vmask;
         uint32_t vsize;
         uint32_t raddr;
         uint32_t rsize;
@@ -208,18 +208,21 @@ main(int argc, char **argv) {
             raddr = xbes[ctr].dwRawAddr;
             rsize = xbes[ctr].dwSizeofRaw;
 
-            if (vmask) {
-                printf("aligning section %u to a page boundary by 0x%x\n", ctr, vmask);
-                if (lseek(fd, raddr, SEEK_SET) != (int)raddr) {
-                    fprintf(stderr, "error: lseek: %s: %s\n", argv[1], strerror(errno));
-                    close(fd);
-                    return 1;
-                }
-                if ((ret = read(fd, (void *)vaddr, rsize)) != (int)rsize) {
-                    fprintf(stderr, "error: read: %s: %s\n", argv[1], (ret < 0) ? strerror(errno) : "short read");
-                    close(fd);
-                    return 1;
-                }
+            if (!vmask) {
+                continue;
+            }
+
+            printf("aligning section %u to a page boundary by 0x%x\n", ctr, vmask);
+
+            if (lseek(fd, raddr, SEEK_SET) != (int)raddr) {
+                fprintf(stderr, "error: lseek: %s: %s\n", argv[1], strerror(errno));
+                close(fd);
+                return 1;
+            }
+            if ((ret = read(fd, (void *)vaddr, rsize)) != (int)rsize) {
+                fprintf(stderr, "error: read: %s: %s\n", argv[1], (ret < 0) ? strerror(errno) : "short read");
+                close(fd);
+                return 1;
             }
         }
     }

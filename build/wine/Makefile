@@ -9,7 +9,7 @@ EXES                  = cxbx.exe loader.exe
 ### Common settings
 
 TARGETFLAGS           = -m32
-CEXTRA                = -g -O0 -Wall -Wextra
+CEXTRA                = $(TARGETFLAGS) -g -O0 -Wall -Wextra
 CXXEXTRA              = $(TARGETFLAGS) -mno-cygwin -g -O0 -W -Wno-sign-compare -Wno-missing-field-initializers -Wno-ignored-qualifiers -Wno-write-strings -fpermissive -isystem /usr/local/include/wine/windows -isystem /usr/include/wine/windows
 RCEXTRA               =
 DEFINES               = -DNOMINMAX -D_GLIBCXX_USE_C99_DYNAMIC -DWIN32 -D_DEBUG -D_WINDOWS -D_CRT_SECURE_NO_WARNINGS# -DD3D9
