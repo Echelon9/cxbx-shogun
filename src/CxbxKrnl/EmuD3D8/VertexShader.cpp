@@ -1494,23 +1494,43 @@ DWORD Xb2PCRegisterType(DWORD VertexRegister)
         break;
     case 0:
         DbgVshPrintf("D3DVSDE_POSITION");
+#ifndef __GNUC__
+        PCRegisterType = D3DVSDE_POSITION;
+#else
         PCRegisterType = XTL::D3DVSDE_POSITION;
+#endif
         break;
     case 1:
         DbgVshPrintf("D3DVSDE_BLENDWEIGHT");
+#ifndef __GNUC__
+        PCRegisterType = D3DVSDE_BLENDWEIGHT;
+#else
         PCRegisterType = XTL::D3DVSDE_BLENDWEIGHT;
+#endif
         break;
     case 2:
         DbgVshPrintf("D3DVSDE_NORMAL");
+#ifndef __GNUC__
+        PCRegisterType = D3DVSDE_NORMAL;
+#else
         PCRegisterType = XTL::D3DVSDE_NORMAL;
+#endif
         break;
     case 3:
         DbgVshPrintf("D3DVSDE_DIFFUSE");
+#ifndef __GNUC__
+        PCRegisterType = D3DVSDE_DIFFUSE;
+#else
         PCRegisterType = XTL::D3DVSDE_DIFFUSE;
+#endif
         break;
     case 4:
         DbgVshPrintf("D3DVSDE_SPECULAR");
+#ifndef __GNUC__
+        PCRegisterType = D3DVSDE_SPECULAR;
+#else
         PCRegisterType = XTL::D3DVSDE_SPECULAR;
+#endif
         break;
     case 5:
         DbgVshPrintf("D3DVSDE_FOG /* xbox ext. */");
@@ -1526,19 +1546,35 @@ DWORD Xb2PCRegisterType(DWORD VertexRegister)
         break;
     case 9:
         DbgVshPrintf("D3DVSDE_TEXCOORD0");
+#ifndef __GNUC__
+        PCRegisterType = D3DVSDE_TEXCOORD0;
+#else
         PCRegisterType = XTL::D3DVSDE_TEXCOORD0;
+#endif
         break;
     case 10:
         DbgVshPrintf("D3DVSDE_TEXCOORD1");
+#ifndef __GNUC__
+        PCRegisterType = D3DVSDE_TEXCOORD1;
+#else
         PCRegisterType = XTL::D3DVSDE_TEXCOORD1;
+#endif
         break;
     case 11:
         DbgVshPrintf("D3DVSDE_TEXCOORD2");
+#ifndef __GNUC__
+        PCRegisterType = D3DVSDE_TEXCOORD2;
+#else
         PCRegisterType = XTL::D3DVSDE_TEXCOORD2;
+#endif
         break;
     case 12:
         DbgVshPrintf("D3DVSDE_TEXCOORD3");
+#ifndef __GNUC__
+        PCRegisterType = D3DVSDE_TEXCOORD3;
+#else
         PCRegisterType = XTL::D3DVSDE_TEXCOORD3;
+#endif
         break;
 #endif
     default:
