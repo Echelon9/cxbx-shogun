@@ -1892,6 +1892,7 @@ void WndMain::StartEmulation(EnumAutoConvert x_AutoConvert, HWND hwndParent)
         if((int)ShellExecute(NULL, "open", m_ExeFilename, NULL, szBuffer, SW_SHOWDEFAULT) <= 32)
 #else
         WCHAR *wszPath;
+        char *pszDirName;
         char *pszUnixPath;
 
         wszPath = (WCHAR *)HeapAlloc(GetProcessHeap(), 0, (strlen(m_XbeFilename)+1)*sizeof(WCHAR));
@@ -1899,7 +1900,10 @@ void WndMain::StartEmulation(EnumAutoConvert x_AutoConvert, HWND hwndParent)
 
         if((pszUnixPath = wine_get_unix_file_name(wszPath)))
         {
-            __gnu_cxx::snprintf(szBuffer, sizeof(szBuffer), "loader.sh %s %p %u %s", pszUnixPath, hwndParent, m_KrnlDebug, m_KrnlDebugFilename);
+            pszDirName = strdup(__argv[0]);
+            *strrchr(pszDirName, '\\') = 0;
+            __gnu_cxx::snprintf(szBuffer, sizeof(szBuffer), "%s\\loader.sh %s %p %u %s", pszDirName, pszUnixPath, hwndParent, m_KrnlDebug, m_KrnlDebugFilename);
+            free(pszDirName);
             HeapFree(GetProcessHeap(), 0, pszUnixPath);
         }
         else
