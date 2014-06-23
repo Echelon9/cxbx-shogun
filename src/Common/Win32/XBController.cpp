@@ -371,7 +371,7 @@ bool XBController::ConfigPoll(char *szStatus)
 
                 Map(CurConfigObject, DeviceInstance.tszInstanceName, dwHow, dwFlags);
 
-                printf("Cxbx: Detected %s%s on %s\n", szDirection, ObjectInstance.tszName, DeviceInstance.tszInstanceName, ObjectInstance.dwType);
+                printf("Cxbx: Detected %s%s on %s%lu\n", szDirection, ObjectInstance.tszName, DeviceInstance.tszInstanceName, ObjectInstance.dwType);
 
                 sprintf(szStatus, "Success: %s Mapped to '%s%s' on '%s'!", m_DeviceNameLookup[CurConfigObject], szDirection, ObjectInstance.tszName, DeviceInstance.tszInstanceName);
 
@@ -1085,6 +1085,11 @@ void XBController::ReorderObjects(const char *szDeviceName, int pos)
         {
             old = v;
             break;
+        } else {
+            // If old device name was not found, do not continue
+            // int old will equal -1, which leads to an out-of-bounds
+            // memory access below
+            return;
         }
     }
 

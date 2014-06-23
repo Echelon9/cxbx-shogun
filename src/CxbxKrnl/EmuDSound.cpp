@@ -83,6 +83,21 @@ XTL::X_CDirectSoundStream::_vtbl XTL::X_CDirectSoundStream::vtbl =
     0xBEEFB00A,                                 // 0x38
 };
 
+XTL::X_XFileMediaObject::_vtbl XTL::X_XFileMediaObject::vtbl = 
+{
+	&XTL::EmuXFileMediaObject_AddRef,		// 0x00
+	&XTL::EmuXFileMediaObject_Release,		// 0x04
+	&XTL::EmuXFileMediaObject_GetInfo,		// 0x08
+	&XTL::EmuXFileMediaObject_GetStatus,	// 0x0C
+	&XTL::EmuXFileMediaObject_Process,		// 0x10
+	&XTL::EmuXFileMediaObject_Discontinuity,// 0x14
+	0xBEEFD007,								// 0x18
+	&XTL::EmuXFileMediaObject_Seek,			// 0x1C
+	0xBEEFD009,								// 0x20
+	&XTL::EmuXFileMediaObject_DoWork,		// 0x24
+};
+
+
 // size of sound buffer cache (used for periodic sound buffer updates)
 #define SOUNDBUFFER_CACHE_SIZE 0x100
 
@@ -94,7 +109,7 @@ static XTL::LPDIRECTSOUND8          g_pDSound8 = NULL;
 static int                          g_pDSound8RefCount = 0;
 static XTL::X_CDirectSoundBuffer   *g_pDSoundBufferCache[SOUNDBUFFER_CACHE_SIZE];
 static XTL::X_CDirectSoundStream   *g_pDSoundStreamCache[SOUNDSTREAM_CACHE_SIZE];
-static int							g_bDSoundCreateCalled = false;
+static int							g_bDSoundCreateCalled = FALSE;
 
 // periodically update sound buffers
 static void HackUpdateSoundBuffers()
@@ -254,7 +269,7 @@ HRESULT WINAPI XTL::EmuDirectSoundCreate
     HRESULT hRet = DS_OK;
 
 	// Set this flag when this function is called
-	g_bDSoundCreateCalled = true;
+	g_bDSoundCreateCalled = TRUE;
 
     if(!initialized || !g_pDSound8)
     {
@@ -1436,7 +1451,7 @@ HRESULT WINAPI XTL::EmuIDirectSoundBuffer8_Play
            ");\n",
            GetCurrentThreadId(), pThis, dwReserved1, dwReserved2, dwFlags);
 
-    if(dwFlags & ~(X_DSBPLAY_LOOPING | X_DSBPLAY_FROMSTART))
+    if(dwFlags & ~(X_DSBPLAY_LOOPING | X_DSBPLAY_FROMSTART | X_DSBPLAY_SYNCHPLAYBACK))
         CxbxKrnlCleanup("Unsupported Playing Flags");
 
     // rewind buffer
@@ -1603,10 +1618,10 @@ HRESULT WINAPI XTL::EmuDirectSoundCreateStream
 
     DbgPrintf("EmuDSound (0x%X): EmuDirectSoundCreateStream\n"
            "(\n"
-           "   pdssd                     : 0x%.08X\n"
+           "   pdssd                     : 0x%.08X (pdssd->dwFlags : 0x%.08X)\n"
            "   ppStream                  : 0x%.08X\n"
            ");\n",
-           GetCurrentThreadId(), pdssd, ppStream);
+           GetCurrentThreadId(), pdssd, pdssd->dwFlags, ppStream);
 
     // TODO: Garbage Collection
     *ppStream = new X_CDirectSoundStream();
@@ -1696,7 +1711,7 @@ HRESULT WINAPI XTL::EmuDirectSoundCreateStream
 				g_pDSoundStreamCache[v] = 0;
 
 			// Let's count DirectSound as being initialized now
-			g_bDSoundCreateCalled = true;
+			g_bDSoundCreateCalled = TRUE;
 		}
 		else
 			EmuWarning("DirectSound not initialized!");
@@ -2016,7 +2031,10 @@ HRESULT WINAPI XTL::EmuCDirectSoundStream_Flush(X_CDirectSoundStream *pThis)
 {
     EmuSwapFS();   // Win2k/XP FS
 
-    DbgPrintf("EmuDSound (0x%X): EmuCDirectSoundStream_Flush();\n",
+    DbgPrintf("EmuDSound (0x%X): EmuCDirectSoundStream_Flush\n"
+		   "(\n"
+		   "   pThis           : 0x%.08X\n"
+		   ");\n",
            GetCurrentThreadId(), pThis);
 
     // TODO: Actually Flush
@@ -2033,8 +2051,11 @@ HRESULT WINAPI XTL::EmuCDirectSound_SynchPlayback(PVOID pUnknown)
 {
     EmuSwapFS();   // Win2k/XP FS
 
-    DbgPrintf("EmuDSound (0x%X): EmuCDirectSound_SynchPlayback(0x%.08X);\n",
-           GetCurrentThreadId());
+    DbgPrintf("EmuDSound (0x%X): EmuCDirectSound_SynchPlayback\n"
+		   "(\n"
+		   "   pUnknown           : 0x%.08X\n"
+		   ");\n",
+		   GetCurrentThreadId(), pUnknown);
 
     EmuSwapFS();   // XBox FS
 
@@ -3391,7 +3412,7 @@ HRESULT WINAPI XTL::EmuIDirectSound8_GetCaps
 // ******************************************************************
 // * func: EmuIDirectSoundStream_SetPitch
 // ******************************************************************
-HRESULT WINAPI XTL::EmuIDirectSoundStream_SetPitch
+HRESULT WINAPI XTL::EmuCDirectSoundStream_SetPitch
 (	
 	X_CDirectSoundStream*	pThis,
     LONG					lPitch
@@ -3758,7 +3779,7 @@ HRESULT WINAPI XTL::EmuIDirectSoundBuffer8_SetNotificationPositions
            ");\n",
            GetCurrentThreadId(), pThis, dwNotifyCount, paNotifies);
 
-	HRESULT hr;
+	HRESULT hr = DSERR_INVALIDPARAM;
 
 	// If we have a valid buffer, query a PC IDirectSoundNotify pointer and
 	// use the paramaters as is since they are directly compatible, then release
@@ -3788,4 +3809,295 @@ HRESULT WINAPI XTL::EmuIDirectSoundBuffer8_SetNotificationPositions
 	EmuSwapFS();	// Xbox FS
 
 	return hr;
+}
+
+// ******************************************************************
+// * func EmuCDirectSoundStream::SetRolloffCurve
+// ******************************************************************
+HRESULT WINAPI XTL::EmuCDirectSoundStream_SetRolloffCurve
+(
+	X_CDirectSoundBuffer	*pThis,
+    const FLOAT				*pflPoints,
+    DWORD					dwPointCount,
+    DWORD					dwApply
+)
+{
+    EmuSwapFS();   // Win2k/XP FS
+
+    DbgPrintf("EmuDSound (0x%X): EmuCDirectSoundStream_SetRolloffCurve\n"
+           "(\n"
+           "   pThis                     : 0x%.08X\n"
+           "   pflPoints                 : 0x%.08X\n"
+           "   dwPointCount              : 0x%.08X\n"
+           "   dwApply                   : 0x%.08X\n"
+           ");\n",
+           GetCurrentThreadId(), pThis, pflPoints, dwPointCount, dwApply);
+
+    // TODO: Implement
+
+    EmuSwapFS();   // XBox FS
+
+    return DS_OK;
+}
+
+// ******************************************************************
+// * func: EmuIDirectSound8_SetEffectData
+// ******************************************************************
+HRESULT WINAPI XTL::EmuIDirectSound8_SetEffectData
+(
+	LPVOID pThis,
+    DWORD dwEffectIndex,
+    DWORD dwOffset,
+    LPCVOID pvData,
+    DWORD dwDataSize,
+    DWORD dwApply
+)
+{
+	EmuSwapFS();   // Win2k/XP FS
+
+    DbgPrintf("EmuDSound (0x%X): EmuIDirectSound8_SetEffectData\n"
+           "(\n"
+           "   pThis                     : 0x%.08X\n"
+           "   dwEfectIndex              : 0x%.08X\n"
+           "   dwOffset                  : 0x%.08X\n"
+		   "   pvData                    : 0x%.08X\n"
+		   "   dwDataSize                : 0x%.08X\n"
+           "   dwApply                   : 0x%.08X\n"
+           ");\n",
+           GetCurrentThreadId(), pThis, dwEffectIndex, dwOffset, pvData, dwDataSize, dwApply);
+
+    // TODO: Implement
+
+    EmuSwapFS();   // XBox FS
+
+    return DS_OK;
+}
+
+// ******************************************************************
+// * func: EmuXFileCreateMediaObjectAsync
+// ******************************************************************
+HRESULT WINAPI XTL::EmuXFileCreateMediaObjectAsync
+(
+    HANDLE	hFile,
+    DWORD	dwMaxPackets,
+    void	**ppMediaObject
+)
+{
+	EmuSwapFS();	// Win2k/XP FS
+
+	DbgPrintf("EmuDSound (0x%X): EmuXFileCreateMediaObjectAsync\n"
+           "(\n"
+           "   hFile                     : 0x%.08X\n"
+		   "   dwMaxPackets              : 0x%.08X\n"
+           "   ppMediaObject             : 0x%.08X\n"
+           ");\n",
+           GetCurrentThreadId(), hFile, dwMaxPackets, ppMediaObject);
+
+	// TODO: Implement
+
+	EmuWarning( "XFileCreateMediaObjectAsync not yet (properly) implemented!!!\n" );
+
+	*ppMediaObject = new X_XFileMediaObject();
+
+	EmuSwapFS();	// Xbox FS
+
+	return S_OK;
+}
+
+// ******************************************************************
+// * func: EmuXFileMediaObject_Seek
+// ******************************************************************
+HRESULT WINAPI XTL::EmuXFileMediaObject_Seek
+(
+	X_XFileMediaObject* pThis,
+    LONG				lOffset,
+    DWORD				dwOrigin,
+    LPDWORD				pdwAbsolute
+)
+{
+	EmuSwapFS();	// Win2k/XP FS
+
+	DbgPrintf("EmuDSound (0x%X): EmuXFileMediaObject_Seek\n"
+           "(\n"
+           "   pThis                     : 0x%.08X\n"
+		   "   lOffset                   : 0x%.08X\n"
+           "   dwOrigin                  : 0x%.08X\n"
+		   "   pdwAbsolute               : 0x%.08X\n"
+           ");\n",
+           GetCurrentThreadId(), pThis, lOffset, dwOrigin, pdwAbsolute);
+
+	// TODO: Implement
+
+	EmuSwapFS();	// Xbox FS
+
+	return S_OK;
+}
+
+// ******************************************************************
+// * func: EmuXFileMediaObject_DoWork
+// ******************************************************************
+VOID WINAPI XTL::EmuXFileMediaObject_DoWork(X_XFileMediaObject* pThis)
+{
+	EmuSwapFS();	// Win2k/XP FS
+
+	DbgPrintf("EmuDSound (0x%X): EmuXFileMediaObject_DoWork\n"
+           "(\n"
+           "   pThis                     : 0x%.08X\n"
+           ");\n",
+           GetCurrentThreadId(), pThis);
+
+	// TODO: Implement
+
+	EmuSwapFS();	// Xbox FS
+}
+
+// ******************************************************************
+// * func: EmuXFileMediaObject_GetStatus
+// ******************************************************************
+HRESULT WINAPI XTL::EmuXFileMediaObject_GetStatus
+(
+	X_XFileMediaObject* pThis,
+    LPDWORD				pdwStatus
+)
+{
+	EmuSwapFS();	// Win2k/XP FS
+
+	DbgPrintf("EmuDSound (0x%X): EmuXFileMediaObject_GetStatus\n"
+           "(\n"
+           "   pThis                     : 0x%.08X\n"
+		   "   pdwStatus                 : 0x%.08X\n"
+           ");\n",
+           GetCurrentThreadId(), pThis, pdwStatus);
+
+	// TODO: Implement
+
+	EmuSwapFS();	// Xbox FS
+
+	return DS_OK;
+}
+
+// ******************************************************************
+// * func: EmuXFileMediaObject_GetInfo
+// ******************************************************************
+HRESULT WINAPI XTL::EmuXFileMediaObject_GetInfo
+(
+	X_XFileMediaObject     *pThis,
+	XMEDIAINFO			   *pInfo
+)
+{
+	EmuSwapFS();	// Win2k/XP FS
+
+	DbgPrintf("EmuDSound (0x%X): EmuXFileMediaObject_GetStatus\n"
+           "(\n"
+           "   pThis                     : 0x%.08X\n"
+		   "   pInfo                     : 0x%.08X\n"
+           ");\n",
+           GetCurrentThreadId(), pThis, pInfo);
+
+	// TODO: Implement
+
+	EmuSwapFS();	// Xbox FS
+
+	return DS_OK;
+}
+
+// ******************************************************************
+// * func: EmuXFileMediaObject_Process
+// ******************************************************************
+HRESULT WINAPI XTL::EmuXFileMediaObject_Process
+(
+	X_XFileMediaObject	   *pThis,
+    LPXMEDIAPACKET			pInputBuffer, 
+    LPXMEDIAPACKET			pOutputBuffer
+)
+{
+	EmuSwapFS();	// Win2k/XP FS
+
+	DbgPrintf("EmuDSound (0x%X): EmuXFileMediaObject_Process\n"
+           "(\n"
+           "   pThis                     : 0x%.08X\n"
+		   "   pInputBuffer              : 0x%.08X\n"
+		   "   pOutputBuffer             : 0x%.08X\n"
+           ");\n",
+           GetCurrentThreadId(), pThis, pInputBuffer, pOutputBuffer);
+
+	// TODO: Implement
+
+	EmuSwapFS();	// Xbox FS
+
+	return DS_OK;
+}
+
+// ******************************************************************
+// * func: EmuXFileMediaObject_AddRef
+// ******************************************************************
+ULONG WINAPI XTL::EmuXFileMediaObject_AddRef(X_XFileMediaObject *pThis)
+{
+	EmuSwapFS();	// Win2k/XP FS
+
+	DbgPrintf("EmuDSound (0x%X): EmuXFileMediaObject_AddRef\n"
+           "(\n"
+           "   pThis                     : 0x%.08X\n"
+           ");\n",
+           GetCurrentThreadId(), pThis);
+
+	ULONG Ret = 0;
+
+	if( pThis )
+	{
+		pThis->EmuRefCount++;
+		Ret = pThis->EmuRefCount;
+	}
+
+	EmuSwapFS();	// Xbox FS
+
+	return Ret;
+}
+
+// ******************************************************************
+// * func: EmuXFileMediaObject_Release
+// ******************************************************************
+ULONG WINAPI XTL::EmuXFileMediaObject_Release(X_XFileMediaObject *pThis)
+{
+	EmuSwapFS();	// Win2k/XP FS
+
+	DbgPrintf("EmuDSound (0x%X): EmuXFileMediaObject_Release\n"
+           "(\n"
+           "   pThis                     : 0x%.08X\n"
+           ");\n",
+           GetCurrentThreadId(), pThis);
+
+	ULONG Ret = 0;
+
+	if( pThis )
+	{
+		pThis->EmuRefCount--;
+
+		if( pThis->EmuRefCount < 1 )
+			delete pThis;
+
+		Ret = pThis->EmuRefCount;
+	}
+
+	EmuSwapFS();	// Xbox FS
+
+	return Ret;
+}
+
+// ******************************************************************
+// * func: EmuXFileMediaObject_Discontinuity
+// ******************************************************************
+HRESULT WINAPI XTL::EmuXFileMediaObject_Discontinuity(X_XFileMediaObject *pThis)
+{
+	EmuSwapFS();	// Win2k/XP FS
+
+	DbgPrintf("EmuDSound (0x%X): EmuXFileMediaObject_Discontinuity\n"
+           "(\n"
+           "   pThis                     : 0x%.08X\n"
+           ");\n",
+           GetCurrentThreadId(), pThis);
+
+	EmuSwapFS();	// Xbox FS
+
+	return DS_OK;
 }

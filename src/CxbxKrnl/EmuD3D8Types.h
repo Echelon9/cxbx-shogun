@@ -88,6 +88,15 @@ typedef enum _X_D3DRESOURCETYPE
 }
 X_D3DRESOURCETYPE;
 
+typedef enum _X_D3DSET_DEPTH_CLIP_PLANES_FLAGS
+{
+    X_D3DSDCP_SET_VERTEXPROGRAM_PLANES         = 1,
+    X_D3DSDCP_SET_FIXEDFUNCTION_PLANES         = 2,
+    X_D3DSDCP_USE_DEFAULT_VERTEXPROGRAM_PLANES = 3,
+    X_D3DSDCP_USE_DEFAULT_FIXEDFUNCTION_PLANES = 4,
+} 
+X_D3DSET_DEPTH_CLIP_PLANES_FLAGS;
+
 typedef struct _X_D3DDISPLAYMODE
 {
     UINT        Width;
@@ -445,6 +454,9 @@ typedef void (__cdecl * D3DVBLANKCALLBACK)(D3DVBLANKDATA *pData);
 
 // D3DSWAPCALLBACK
 typedef void (__cdecl * D3DSWAPCALLBACK)(D3DSWAPDATA *pData);
+
+// D3DCALLBACK
+typedef void (__cdecl * D3DCALLBACK)(DWORD Context);
 
 // deferred render state "unknown" flag
 #define X_D3DRS_UNK  0x7fffffff

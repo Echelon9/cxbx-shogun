@@ -44,6 +44,7 @@
 // EmuIDirectSoundBuffer8_Play flags
 #define X_DSBPLAY_LOOPING       0x00000001
 #define X_DSBPLAY_FROMSTART     0x00000002
+#define X_DSBPLAY_SYNCHPLAYBACK 0x00000004
 
 // EmuIDirectSoundBuffer8_Pause flags
 #define X_DSBPAUSE_RESUME             0x00000000
@@ -346,6 +347,81 @@ class X_CDirectSoundStream
         PVOID                    EmuLockPtr2;
         DWORD                    EmuLockBytes2;
         DWORD                    EmuPlayFlags;
+};
+
+// ******************************************************************
+// * X_XFileMediaObject
+// ******************************************************************
+class X_XFileMediaObject
+{
+	public:
+	X_XFileMediaObject() : pVtbl(&vtbl) { EmuRefCount = 1; }
+
+	private:
+        // vtable (cached by each instance, via constructor)
+        struct _vtbl
+        {
+            ULONG (WINAPI *AddRef)(X_XFileMediaObject *pThis);            // 0x00
+            ULONG (WINAPI *Release)(X_XFileMediaObject *pThis);           // 0x04
+
+			HRESULT (WINAPI *GetInfo)										// 0x08
+			(
+				X_XFileMediaObject	   *pThis,
+				XMEDIAINFO			   *pInfo
+			);
+			                                                                                                  
+            HRESULT (WINAPI *GetStatus)                                     // 0x0C
+            (
+                X_XFileMediaObject	   *pThis,
+                DWORD                  *pdwStatus
+            );
+ 
+            HRESULT (WINAPI *Process)                                       // 0x10
+            (
+                X_XFileMediaObject	   *pThis,
+                PXMEDIAPACKET           pInputBuffer,
+                PXMEDIAPACKET           pOutputBuffer
+            );
+           
+            HRESULT (WINAPI *Discontinuity)(X_XFileMediaObject *pThis);		// 0x14
+			                                                               
+            DWORD Unknown7;
+/*
+            HRESULT (WINAPI *Flush)(X_XFileMediaObject *pThis);				// 0x18
+*/
+			HRESULT (WINAPI *Seek)											// 0x1C
+			(
+				X_XFileMediaObject	   *pThis,
+				LONG					lOffset, 
+				DWORD					dwOrigin, 
+				LPDWORD					pdwAbsolute
+			);
+/*
+			HRESULT (WINAPI *GetLength)										// 0x20
+			(
+				X_XFileMediaObject	   *pThis,
+				LPDWORD					pdwLength
+			);*/
+
+            DWORD Unknown9;
+
+			void (WINAPI *DoWork)(X_XFileMediaObject *pThis);				// 0x24
+		}
+		*pVtbl;
+
+		// global vtbl for this class
+        static _vtbl vtbl;
+
+        // debug mode guard for detecting naughty data accesses
+        #ifdef _DEBUG
+        DWORD DebugGuard[256];
+        #endif
+
+    public:
+		// TODO: More?
+		LPVOID				EmuBuffer;
+		HANDLE				EmuHandle;
+		UINT				EmuRefCount;
 };
 
 // ******************************************************************
@@ -1279,9 +1355,9 @@ HRESULT WINAPI EmuIDirectSound8_GetCaps
 );
 
 // ******************************************************************
-// * func: EmuIDirectSoundStream_SetPitch
+// * func: EmuCDirectSoundStream_SetPitch
 // ******************************************************************
-HRESULT WINAPI EmuIDirectSoundStream_SetPitch
+HRESULT WINAPI EmuCDirectSoundStream_SetPitch
 (	
 	X_CDirectSoundStream*	pThis,
     LONG					lPitch
@@ -1408,5 +1484,97 @@ HRESULT WINAPI EmuIDirectSoundBuffer8_SetNotificationPositions
     LPCDSBPOSITIONNOTIFY	paNotifies
 );
 
+// ******************************************************************
+// * func EmuCDirectSoundStream::SetRolloffCurve
+// ******************************************************************
+HRESULT WINAPI EmuCDirectSoundStream_SetRolloffCurve
+(
+	X_CDirectSoundBuffer	*pThis,
+    const FLOAT				*pflPoints,
+    DWORD					dwPointCount,
+    DWORD					dwApply
+);
+
+// ******************************************************************
+// * func: EmuIDirectSound8_SetEffectData
+// ******************************************************************
+HRESULT WINAPI EmuIDirectSound8_SetEffectData
+(
+	LPVOID pThis,
+    DWORD dwEffectIndex,
+    DWORD dwOffset,
+    LPCVOID pvData,
+    DWORD dwDataSize,
+    DWORD dwApply
+);
+
+// ******************************************************************
+// * func: EmuXFileCreateMediaObjectAsync
+// ******************************************************************
+HRESULT WINAPI EmuXFileCreateMediaObjectAsync
+(
+    HANDLE	hFile,
+    DWORD	dwMaxPackets,
+    void	**ppMediaObject
+);
+
+// ******************************************************************
+// * func: EmuXFileMediaObject_Seek
+// ******************************************************************
+HRESULT WINAPI EmuXFileMediaObject_Seek
+(
+	X_XFileMediaObject* pThis,
+    LONG				lOffset,
+    DWORD				dwOrigin,
+    LPDWORD				pdwAbsolute
+);
+
+// ******************************************************************
+// * func: EmuXFileMediaObject_DoWork
+// ******************************************************************
+VOID WINAPI EmuXFileMediaObject_DoWork(X_XFileMediaObject* pThis);
+
+// ******************************************************************
+// * func: EmuXFileMediaObject_GetStatus
+// ******************************************************************
+HRESULT WINAPI EmuXFileMediaObject_GetStatus
+(
+	X_XFileMediaObject* pThis,
+    LPDWORD				pdwStatus
+);
+
+// ******************************************************************
+// * func: EmuXFileMediaObject_GetInfo
+// ******************************************************************
+HRESULT WINAPI EmuXFileMediaObject_GetInfo
+(
+	X_XFileMediaObject	   *pThis,
+	XMEDIAINFO			   *pInfo
+);
+
+// ******************************************************************
+// * func: EmuXFileMediaObject_Process
+// ******************************************************************
+HRESULT WINAPI EmuXFileMediaObject_Process
+(
+	X_XFileMediaObject	   *pThis,
+    LPXMEDIAPACKET			pInputBuffer, 
+    LPXMEDIAPACKET			pOutputBuffer
+);
+
+// ******************************************************************
+// * func: EmuXFileMediaObject_AddRef
+// ******************************************************************
+ULONG WINAPI EmuXFileMediaObject_AddRef(X_XFileMediaObject *pThis);
+
+// ******************************************************************
+// * func: EmuXFileMediaObject_Release
+// ******************************************************************
+ULONG WINAPI EmuXFileMediaObject_Release(X_XFileMediaObject *pThis);
+
+// ******************************************************************
+// * func: EmuXFileMediaObject_Discontinuity
+// ******************************************************************
+HRESULT WINAPI EmuXFileMediaObject_Discontinuity(X_XFileMediaObject *pThis);
 
 #endif

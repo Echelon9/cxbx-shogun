@@ -119,8 +119,8 @@ extern "C" CXBXKRNL_API void NTAPI EmuWarning(const char *szWarningMessage, ...)
     if(szWarningMessage == NULL)
         return;
 
-    char szBuffer1[255];
-    char szBuffer2[255];
+    char szBuffer1[1024];
+    char szBuffer2[1024];
 
     va_list argp;
 
@@ -279,9 +279,10 @@ extern int EmuException(LPEXCEPTION_POINTERS e)
         }
     }
 
-	// Smashing drive *NTSC* 
+	
 	if(e->ExceptionRecord->ExceptionCode == 0xC0000005)
 	{
+		// Smashing drive *NTSC* 
 		if(e->ContextRecord->Eip == 0xA41F5)
 		{
 			// Skip call to D3D::SwapStart(class D3D::CDevice *)
@@ -292,11 +293,8 @@ extern int EmuException(LPEXCEPTION_POINTERS e)
 
 			return EXCEPTION_CONTINUE_EXECUTION;
 		}
-	}
 
-	// House of the Dead 3 *NTSC*
-	if(e->ExceptionRecord->ExceptionCode == 0xC0000005)
-	{
+		// House of the Dead 3 *NTSC*
 		if(e->ContextRecord->Eip == 0xB961E)
 		{
 			e->ContextRecord->Eip += 2;
@@ -308,6 +306,7 @@ extern int EmuException(LPEXCEPTION_POINTERS e)
 			return EXCEPTION_CONTINUE_EXECUTION;
 		}
 
+		// House of the Dead 3 *NTSC*
 		if(e->ContextRecord->Eip == 0x1197F4)
 		{
 			e->ContextRecord->Eip += 2;
@@ -762,10 +761,12 @@ extern int EmuException(LPEXCEPTION_POINTERS e)
             " EIP := 0x%.08X EFL := 0x%.08X\n"
             " EAX := 0x%.08X EBX := 0x%.08X ECX := 0x%.08X EDX := 0x%.08X\n"
             " ESI := 0x%.08X EDI := 0x%.08X ESP := 0x%.08X EBP := 0x%.08X\n"
+			" CR2 := 0x%.08X\n"
             "\n",
             e->ContextRecord->Eip, e->ContextRecord->EFlags,
             e->ContextRecord->Eax, e->ContextRecord->Ebx, e->ContextRecord->Ecx, e->ContextRecord->Edx,
-            e->ContextRecord->Esi, e->ContextRecord->Edi, e->ContextRecord->Esp, e->ContextRecord->Ebp);
+            e->ContextRecord->Esi, e->ContextRecord->Edi, e->ContextRecord->Esp, e->ContextRecord->Ebp,
+			e->ContextRecord->Dr2);
 
 #ifdef _DEBUG
         CONTEXT Context = *(e->ContextRecord);
@@ -787,7 +788,7 @@ extern int EmuException(LPEXCEPTION_POINTERS e)
                 "  Press Abort to terminate emulation.\n"
                 "  Press Retry to debug.\n"
                 "  Press Ignore to continue emulation.",
-                e->ContextRecord->Eip, e->ContextRecord->EFlags);
+                e->ContextRecord->Eip);
 
             e->ContextRecord->Eip += 1;
 
@@ -819,7 +820,7 @@ extern int EmuException(LPEXCEPTION_POINTERS e)
                 "\n"
                 "  Press \"OK\" to terminate emulation.\n"
                 "  Press \"Cancel\" to debug.",
-                e->ExceptionRecord->ExceptionCode, e->ContextRecord->Eip, e->ContextRecord->EFlags);
+                e->ExceptionRecord->ExceptionCode, e->ContextRecord->Eip);
 
             if(MessageBox(g_hEmuWindow, buffer, "Cxbx", MB_ICONSTOP | MB_OKCANCEL) == IDOK)
             {
