@@ -84,7 +84,7 @@ static void                         EmuAdjustPower2(UINT *dwWidth, UINT *dwHeigh
 // Static Variable(s)
 static GUID                         g_ddguid;               // DirectDraw driver GUID
 static HMONITOR                     g_hMonitor      = NULL; // Handle to DirectDraw monitor
-static XTL::LPDIRECT3D8             g_pD3D8         = NULL; // Direct3D8
+static XTL::LPDIRECT3D8             g_pD3D          = NULL; // Direct3D instance
 static BOOL                         g_bSupportsYUY2 = FALSE;// Does device support YUY2 overlays?
 static XTL::LPDIRECTDRAW7           g_pDD7          = NULL; // DirectDraw7
 static DWORD                        g_dwOverlayW    = 640;  // Cached Overlay Width
@@ -224,14 +224,14 @@ VOID XTL::EmuD3DInit(Xbe::Header *XbeHeader, uint32 XbeHeaderSize)
         using namespace XTL;
 
         // xbox Direct3DCreate8 returns "1" always, so we need our own ptr
-        g_pD3D8 = Direct3DCreate8(D3D_SDK_VERSION);
+        g_pD3D = Direct3DCreate8(D3D_SDK_VERSION);
 
-        if(g_pD3D8 == NULL)
+        if(g_pD3D == NULL)
             CxbxKrnlCleanup("Could not initialize Direct3D8!");
 
         D3DDEVTYPE DevType = (g_XBVideo.GetDirect3DDevice() == 0) ? D3DDEVTYPE_HAL : D3DDEVTYPE_REF;
 
-        g_pD3D8->GetDeviceCaps(g_XBVideo.GetDisplayAdapter(), DevType, &g_D3DCaps);
+        g_pD3D->GetDeviceCaps(g_XBVideo.GetDisplayAdapter(), DevType, &g_D3DCaps);
     }
 
     SetFocus(g_hEmuWindow);
@@ -792,7 +792,7 @@ static DWORD WINAPI EmuCreateDeviceProxy(LPVOID)
 
                         XTL::D3DDISPLAYMODE D3DDisplayMode;
 
-                        g_pD3D8->GetAdapterDisplayMode(g_XBVideo.GetDisplayAdapter(), &D3DDisplayMode);
+                        g_pD3D->GetAdapterDisplayMode(g_XBVideo.GetDisplayAdapter(), &D3DDisplayMode);
 
                         g_EmuCDPD.pPresentationParameters->BackBufferFormat = D3DDisplayMode.Format;
                         g_EmuCDPD.pPresentationParameters->FullScreen_RefreshRateInHz = 0;
@@ -841,7 +841,7 @@ static DWORD WINAPI EmuCreateDeviceProxy(LPVOID)
                 #endif
 
                 // redirect to windows Direct3D
-                g_EmuCDPD.hRet = g_pD3D8->CreateDevice
+                g_EmuCDPD.hRet = g_pD3D->CreateDevice
                 (
                     g_EmuCDPD.Adapter,
                     g_EmuCDPD.DeviceType,
@@ -1332,7 +1332,7 @@ HRESULT WINAPI XTL::EmuIDirect3D8_CheckDeviceFormat
 
 	// HACK: Return true for everything? (Hunter the Reckoning)
 
-    HRESULT hRet = S_OK; /*g_pD3D8->CheckDeviceFormat
+    HRESULT hRet = S_OK; /*g_pD3D->CheckDeviceFormat
     (
         g_XBVideo.GetDisplayAdapter(), (g_XBVideo.GetDirect3DDevice() == 0) ? XTL::D3DDEVTYPE_HAL : XTL::D3DDEVTYPE_REF,
         EmuXB2PC_D3DFormat(AdapterFormat), Usage, (D3DRESOURCETYPE)RType, EmuXB2PC_D3DFormat(CheckFormat)
@@ -1517,7 +1517,7 @@ VOID WINAPI XTL::EmuIDirect3DDevice8_GetDeviceCaps
            ");\n",
            GetCurrentThreadId(), pCaps);
 
-    HRESULT hRet = g_pD3D8->GetDeviceCaps(g_XBVideo.GetDisplayAdapter(), (g_XBVideo.GetDirect3DDevice() == 0) ? XTL::D3DDEVTYPE_HAL : XTL::D3DDEVTYPE_REF, pCaps);
+    HRESULT hRet = g_pD3D->GetDeviceCaps(g_XBVideo.GetDisplayAdapter(), (g_XBVideo.GetDirect3DDevice() == 0) ? XTL::D3DDEVTYPE_HAL : XTL::D3DDEVTYPE_REF, pCaps);
 	if(FAILED(hRet))
 		CxbxKrnlCleanup("EmuIDirect3DDevice8_GetDeviceCaps failed!");
 
@@ -1622,13 +1622,13 @@ UINT WINAPI XTL::EmuIDirect3D8_GetAdapterModeCount
            ");\n",
            GetCurrentThreadId(), Adapter);
 
-    UINT ret = g_pD3D8->GetAdapterModeCount(g_XBVideo.GetDisplayAdapter());
+    UINT ret = g_pD3D->GetAdapterModeCount(g_XBVideo.GetDisplayAdapter());
 
     D3DDISPLAYMODE Mode;
 
     for(uint32 v=0;v<ret;v++)
     {
-        HRESULT hRet = g_pD3D8->EnumAdapterModes(g_XBVideo.GetDisplayAdapter(), v, &Mode);
+        HRESULT hRet = g_pD3D->EnumAdapterModes(g_XBVideo.GetDisplayAdapter(), v, &Mode);
 
         if(hRet != D3D_OK)
             break;
@@ -1662,7 +1662,7 @@ HRESULT WINAPI XTL::EmuIDirect3D8_GetAdapterDisplayMode
 
     // NOTE: WARNING: We should cache the "Emulated" display mode and return
     // This value. We can initialize the cache with the default Xbox mode data.
-    HRESULT hRet = g_pD3D8->GetAdapterDisplayMode
+    HRESULT hRet = g_pD3D->GetAdapterDisplayMode
     (
         g_XBVideo.GetDisplayAdapter(),
         (D3DDISPLAYMODE*)pMode
@@ -1720,7 +1720,7 @@ HRESULT WINAPI XTL::EmuIDirect3D8_EnumAdapterModes
 
     do
     {
-        hRet = g_pD3D8->EnumAdapterModes(g_XBVideo.GetDisplayAdapter(), Mode+ModeAdder, (D3DDISPLAYMODE*)&PCMode);
+        hRet = g_pD3D->EnumAdapterModes(g_XBVideo.GetDisplayAdapter(), Mode+ModeAdder, (D3DDISPLAYMODE*)&PCMode);
 
         if(hRet != D3D_OK || (PCMode.Width == 640 && PCMode.Height == 480))
             break;
@@ -9203,7 +9203,7 @@ HRESULT WINAPI XTL::EmuIDirect3D8_CheckDeviceMultiSampleType
     D3DMULTISAMPLE_TYPE PCMultiSampleType = EmuXB2PC_D3DMultiSampleFormat((DWORD) MultiSampleType);
 
     // Now call the real CheckDeviceMultiSampleType with the corrected parameters.
-    HRESULT hRet = g_pD3D8->CheckDeviceMultiSampleType
+    HRESULT hRet = g_pD3D->CheckDeviceMultiSampleType
     (
         Adapter,
         DeviceType,
@@ -9237,7 +9237,7 @@ HRESULT WINAPI XTL::EmuIDirect3D8_GetDeviceCaps
            ");\n",
            GetCurrentThreadId(), Adapter, DeviceType, pCaps);
 
-    HRESULT hRet = g_pD3D8->GetDeviceCaps(Adapter, DeviceType, pCaps);
+    HRESULT hRet = g_pD3D->GetDeviceCaps(Adapter, DeviceType, pCaps);
 	if(FAILED(hRet))
 		CxbxKrnlCleanup("IDirect3D8::GetDeviceCaps failed!");
 
@@ -10194,7 +10194,7 @@ HRESULT WINAPI XTL::EmuIDirect3D8_GetAdapterIdentifier
 	// so it's recommended to add this function to every XDK you possibly can as it will
 	// save you much hassle (at least it did for Max Payne).
 
-	HRESULT hRet = g_pD3D8->GetAdapterIdentifier( Adapter, Flags, pIdentifier );
+	HRESULT hRet = g_pD3D->GetAdapterIdentifier( Adapter, Flags, pIdentifier );
 	if(FAILED(hRet))
 		EmuWarning("GetAdapterIdentifier failed!");
 

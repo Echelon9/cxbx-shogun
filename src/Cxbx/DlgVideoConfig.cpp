@@ -47,7 +47,7 @@ static VOID RefreshDisplayAdapter();
 static VOID RefreshDirect3DDevice();
 
 /*! direct3d instance */
-static XTL::LPDIRECT3D8 g_pD3D8 = 0;
+static XTL::LPDIRECT3D8 g_pD3D = 0;
 /*! video configuration */
 static XBVideo g_XBVideo;
 /*! changes flag */
@@ -71,11 +71,11 @@ VOID ShowVideoConfig(HWND hwnd)
 
     /*! initialize direct3d */
     {
-        g_pD3D8 = XTL::Direct3DCreate8(D3D_SDK_VERSION);
+        g_pD3D = XTL::Direct3DCreate8(D3D_SDK_VERSION);
 
-        if(g_pD3D8 == 0) { goto cleanup; }
+        if(g_pD3D == 0) { goto cleanup; }
 
-        g_dwAdapterCount = g_pD3D8->GetAdapterCount();
+        g_dwAdapterCount = g_pD3D->GetAdapterCount();
     }
 
     /*! show dialog box */
@@ -85,10 +85,10 @@ cleanup:
 
     /*! cleanup direct3d */
     {
-        if(g_pD3D8 != 0)
+        if(g_pD3D != 0)
         {
-            g_pD3D8->Release();
-            g_pD3D8 = 0;
+            g_pD3D->Release();
+            g_pD3D = 0;
         }
     }
 }
@@ -114,7 +114,7 @@ INT_PTR CALLBACK DlgVideoConfigProc(HWND hWndDlg, UINT uMsg, WPARAM wParam, LPAR
                 {
                     XTL::D3DADAPTER_IDENTIFIER8 adapterIdentifier;
 
-                    g_pD3D8->GetAdapterIdentifier(v, D3DENUM_NO_WHQL_LEVEL, &adapterIdentifier);
+                    g_pD3D->GetAdapterIdentifier(v, D3DENUM_NO_WHQL_LEVEL, &adapterIdentifier);
 
                     if(v == 0)
                     {
@@ -273,7 +273,7 @@ VOID RefreshDisplayAdapter()
             XTL::D3DCAPS8 Caps;
 
             /*! verify device is available */
-            if(g_pD3D8->GetDeviceCaps(g_XBVideo.GetDisplayAdapter(), devType[d], &Caps) == D3D_OK)
+            if(g_pD3D->GetDeviceCaps(g_XBVideo.GetDisplayAdapter(), devType[d], &Caps) == D3D_OK)
             {
                 /*! add device to list */
                 SendMessage(g_hDirect3DDevice, CB_ADDSTRING, 0, (LPARAM)szDevType[d]);
@@ -315,7 +315,7 @@ VOID RefreshDirect3DDevice()
 
         /*! enumerate display modes */
         {
-            uint32 dwAdapterModeCount = g_pD3D8->GetAdapterModeCount(g_XBVideo.GetDisplayAdapter());
+            uint32 dwAdapterModeCount = g_pD3D->GetAdapterModeCount(g_XBVideo.GetDisplayAdapter());
 
             SendMessage(g_hVideoResolution, CB_ADDSTRING, 0, (LPARAM)"Automatic (Default)");
 
@@ -326,7 +326,7 @@ VOID RefreshDirect3DDevice()
 
                 XTL::D3DDISPLAYMODE displayMode;
 
-                g_pD3D8->EnumAdapterModes(g_XBVideo.GetDisplayAdapter(), v, &displayMode);
+                g_pD3D->EnumAdapterModes(g_XBVideo.GetDisplayAdapter(), v, &displayMode);
 
                 switch(displayMode.Format)
                 {
