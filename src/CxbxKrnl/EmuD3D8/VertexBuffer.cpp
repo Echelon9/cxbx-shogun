@@ -278,7 +278,7 @@ bool XTL::VertexPatcher::ApplyCachedStream(VertexPatchDesc *pPatchDesc,
 
     if(!pPatchDesc->pVertexStreamZeroData)
     {
-        g_pD3DDevice8->GetStreamSource(uiStream, &pOrigVertexBuffer, &uiStride);
+        g_pD3DDevice->GetStreamSource(uiStream, &pOrigVertexBuffer, &uiStride);
         if(!pOrigVertexBuffer)
 		{
 			/*if(!g_pVertexBuffer || !g_pVertexBuffer->EmuVertexBuffer8)
@@ -372,7 +372,7 @@ bool XTL::VertexPatcher::ApplyCachedStream(VertexPatchDesc *pPatchDesc,
             {
                 m_pStreams[uiStream].pOriginalStream = pOrigVertexBuffer;
                 m_pStreams[uiStream].uiOrigStride = uiStride;
-                g_pD3DDevice8->SetStreamSource(uiStream, pCachedStream->Stream.pPatchedStream, pCachedStream->Stream.uiNewStride);
+                g_pD3DDevice->SetStreamSource(uiStream, pCachedStream->Stream.pPatchedStream, pCachedStream->Stream.uiNewStride);
                 pCachedStream->Stream.pPatchedStream->AddRef();
                 pCachedStream->Stream.pOriginalStream->AddRef();
                 m_pStreams[uiStream].pPatchedStream = pCachedStream->Stream.pPatchedStream;
@@ -459,7 +459,7 @@ bool XTL::VertexPatcher::PatchStream(VertexPatchDesc *pPatchDesc,
 
     if(!pPatchDesc->pVertexStreamZeroData)
     {
-        g_pD3DDevice8->GetStreamSource(uiStream, &pOrigVertexBuffer, &uiStride);
+        g_pD3DDevice->GetStreamSource(uiStream, &pOrigVertexBuffer, &uiStride);
         if(FAILED(pOrigVertexBuffer->GetDesc(&Desc)))
         {
             CxbxKrnlCleanup("Could not retrieve original buffer size");
@@ -472,7 +472,7 @@ bool XTL::VertexPatcher::PatchStream(VertexPatchDesc *pPatchDesc,
         {
             CxbxKrnlCleanup("Couldn't lock the original buffer");
         }
-        g_pD3DDevice8->CreateVertexBuffer(dwNewSize, 0, 0, XTL::D3DPOOL_MANAGED, &pNewVertexBuffer);
+        g_pD3DDevice->CreateVertexBuffer(dwNewSize, 0, 0, XTL::D3DPOOL_MANAGED, &pNewVertexBuffer);
         if(FAILED(pNewVertexBuffer->Lock(0, 0, &pNewData, 0)))
         {
             CxbxKrnlCleanup("Couldn't lock the new buffer");
@@ -679,7 +679,7 @@ bool XTL::VertexPatcher::PatchStream(VertexPatchDesc *pPatchDesc,
         pNewVertexBuffer->Unlock();
         pOrigVertexBuffer->Unlock();
 
-        if(FAILED(g_pD3DDevice8->SetStreamSource(uiStream, pNewVertexBuffer, pStreamPatch->ConvertedStride)))
+        if(FAILED(g_pD3DDevice->SetStreamSource(uiStream, pNewVertexBuffer, pStreamPatch->ConvertedStride)))
         {
             CxbxKrnlCleanup("Failed to set the type patched buffer as the new stream source!\n");
         }
@@ -749,7 +749,7 @@ bool XTL::VertexPatcher::NormalizeTexCoords(VertexPatchDesc *pPatchDesc, UINT ui
     {
         // Copy stream for patching and caching.
 
-        g_pD3DDevice8->GetStreamSource(uiStream, &pOrigVertexBuffer, &uiStride);
+        g_pD3DDevice->GetStreamSource(uiStream, &pOrigVertexBuffer, &uiStride);
         XTL::D3DVERTEXBUFFER_DESC Desc;
         if(!pOrigVertexBuffer || FAILED(pOrigVertexBuffer->GetDesc(&Desc)))
         {
@@ -762,7 +762,7 @@ bool XTL::VertexPatcher::NormalizeTexCoords(VertexPatchDesc *pPatchDesc, UINT ui
         {
             CxbxKrnlCleanup("Couldn't lock original FVF buffer.");
         }
-        g_pD3DDevice8->CreateVertexBuffer(Desc.Size, 0, 0, XTL::D3DPOOL_MANAGED, &pNewVertexBuffer);
+        g_pD3DDevice->CreateVertexBuffer(Desc.Size, 0, 0, XTL::D3DPOOL_MANAGED, &pNewVertexBuffer);
         if(FAILED(pNewVertexBuffer->Lock(0, 0, &pData, 0)))
         {
             CxbxKrnlCleanup("Couldn't lock new FVF buffer.");
@@ -851,7 +851,7 @@ bool XTL::VertexPatcher::NormalizeTexCoords(VertexPatchDesc *pPatchDesc, UINT ui
     {
         pNewVertexBuffer->Unlock();
 
-        if(FAILED(g_pD3DDevice8->SetStreamSource(uiStream, pNewVertexBuffer, uiStride)))
+        if(FAILED(g_pD3DDevice->SetStreamSource(uiStream, pNewVertexBuffer, uiStride)))
         {
             CxbxKrnlCleanup("Failed to set the texcoord patched FVF buffer as the new stream source.");
         }
@@ -932,7 +932,7 @@ bool XTL::VertexPatcher::PatchPrimitive(VertexPatchDesc *pPatchDesc,
 
     if(pPatchDesc->pVertexStreamZeroData == 0)
     {
-        g_pD3DDevice8->GetStreamSource(0, &pStream->pOriginalStream, &pStream->uiOrigStride);
+        g_pD3DDevice->GetStreamSource(0, &pStream->pOriginalStream, &pStream->uiOrigStride);
         pStream->uiNewStride = pStream->uiOrigStride; // The stride is still the same
     }
     else
@@ -978,7 +978,7 @@ bool XTL::VertexPatcher::PatchPrimitive(VertexPatchDesc *pPatchDesc,
             dwNewSizeWR = dwNewSize + dwOriginalSizeWR - dwOriginalSize;
         }
 
-        g_pD3DDevice8->CreateVertexBuffer(dwNewSizeWR, 0, 0, XTL::D3DPOOL_MANAGED, &pStream->pPatchedStream);
+        g_pD3DDevice->CreateVertexBuffer(dwNewSizeWR, 0, 0, XTL::D3DPOOL_MANAGED, &pStream->pPatchedStream);
 
         if(pStream->pOriginalStream != 0)
         {
@@ -1067,7 +1067,7 @@ bool XTL::VertexPatcher::PatchPrimitive(VertexPatchDesc *pPatchDesc,
         pStream->pOriginalStream->Unlock();
         pStream->pPatchedStream->Unlock();
 
-        g_pD3DDevice8->SetStreamSource(0, pStream->pPatchedStream, pStream->uiOrigStride);
+        g_pD3DDevice->SetStreamSource(0, pStream->pPatchedStream, pStream->uiOrigStride);
     }
 
     m_bPatched = true;
@@ -1117,7 +1117,7 @@ bool XTL::VertexPatcher::Restore()
     {
         if(m_pStreams[uiStream].pOriginalStream != NULL && m_pStreams[uiStream].pPatchedStream != NULL)
         {
-            g_pD3DDevice8->SetStreamSource(0, m_pStreams[uiStream].pOriginalStream, m_pStreams[uiStream].uiOrigStride);
+            g_pD3DDevice->SetStreamSource(0, m_pStreams[uiStream].pOriginalStream, m_pStreams[uiStream].uiOrigStride);
         }
 
         if(m_pStreams[uiStream].pOriginalStream != NULL)
@@ -1339,10 +1339,10 @@ VOID XTL::EmuFlushIVB()
 
     if(bFVF)
     {
-        g_pD3DDevice8->SetVertexShader(dwCurFVF);
+        g_pD3DDevice->SetVertexShader(dwCurFVF);
     }
 
-    g_pD3DDevice8->DrawPrimitiveUP(
+    g_pD3DDevice->DrawPrimitiveUP(
         EmuPrimitiveType(VPDesc.PrimitiveType),
         VPDesc.dwPrimitiveCount,
         VPDesc.pVertexStreamZeroData,
@@ -1352,7 +1352,7 @@ VOID XTL::EmuFlushIVB()
 
     if(bFVF)
     {
-        g_pD3DDevice8->SetVertexShader(g_CurrentVertexShader);
+        g_pD3DDevice->SetVertexShader(g_CurrentVertexShader);
     }
 
     VertPatch.Restore();
@@ -1557,7 +1557,7 @@ VOID XTL::EmuUpdateActiveTexture()
             }
         }
 
-        g_pD3DDevice8->SetTexture(Stage, pTexture->EmuTexture8);
+        g_pD3DDevice->SetTexture(Stage, pTexture->EmuTexture8);
         //*/
     }
 }

@@ -1182,7 +1182,7 @@ XBSYSAPI EXPORTNUM(1) xboxkrnl::PVOID NTAPI xboxkrnl::AvGetSavedDataAddress()
 	// Get a copy of the front buffer
 	IDirect3DSurface8* pFrontBuffer = NULL;
 
-	if( SUCCEEDED(g_pD3DDevice8->GetFrontBuffer(pFrontBuffer)))
+	if( SUCCEEDED(g_pD3DDevice->GetFrontBuffer(pFrontBuffer)))
 	{
 		D3DLOCKED_RECT LockedRect;
 		pFrontBuffer->LockRect( 0, NULL, &LockedRect );
