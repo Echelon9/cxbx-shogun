@@ -37,7 +37,11 @@
 #include "DlgVideoConfig.h"
 #include "ResCxbx.h"
 
+#ifndef D3D9
 #include <d3d8.h>
+#else
+#include <d3d9.h>
+#endif
 
 /*! windows dialog procedure */
 static INT_PTR CALLBACK DlgVideoConfigProc(HWND hWndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
@@ -47,7 +51,11 @@ static VOID RefreshDisplayAdapter();
 static VOID RefreshDirect3DDevice();
 
 /*! direct3d instance */
+#ifndef D3D9
 static XTL::LPDIRECT3D8 g_pD3D = 0;
+#else
+static XTL::LPDIRECT3D9 g_pD3D = 0;
+#endif
 /*! video configuration */
 static XBVideo g_XBVideo;
 /*! changes flag */
@@ -71,7 +79,11 @@ VOID ShowVideoConfig(HWND hwnd)
 
     /*! initialize direct3d */
     {
+#ifndef D3D9
         g_pD3D = XTL::Direct3DCreate8(D3D_SDK_VERSION);
+#else
+        g_pD3D = XTL::Direct3DCreate9(D3D_SDK_VERSION);
+#endif
 
         if(g_pD3D == 0) { goto cleanup; }
 
@@ -112,9 +124,17 @@ INT_PTR CALLBACK DlgVideoConfigProc(HWND hWndDlg, UINT uMsg, WPARAM wParam, LPAR
 
                 for(uint32 v=0;v<g_dwAdapterCount;v++)
                 {
+#ifndef D3D9
                     XTL::D3DADAPTER_IDENTIFIER8 adapterIdentifier;
-
                     g_pD3D->GetAdapterIdentifier(v, D3DENUM_NO_WHQL_LEVEL, &adapterIdentifier);
+#else
+                    XTL::D3DADAPTER_IDENTIFIER9 adapterIdentifier;
+                    /* Applications now have to explicitly ask for the Microsoft Windows Hardware 
+                     * Quality Labs (WHQL) because the response takes relatively long (a few seconds). 
+                     * D3DENUM_NO_WHQL_LEVEL has been removed and D3DENUM_WHQL_LEVEL has been added.
+                     */
+                    g_pD3D->GetAdapterIdentifier(v, 0, &adapterIdentifier);
+#endif
 
                     if(v == 0)
                     {
@@ -270,7 +290,11 @@ VOID RefreshDisplayAdapter()
         /*! step through devices types */
         for(uint32 d=0;d<2;d++)
         {
+#ifndef D3D9
             XTL::D3DCAPS8 Caps;
+#else
+            XTL::D3DCAPS9 Caps;
+#endif
 
             /*! verify device is available */
             if(g_pD3D->GetDeviceCaps(g_XBVideo.GetDisplayAdapter(), devType[d], &Caps) == D3D_OK)
@@ -315,7 +339,22 @@ VOID RefreshDirect3DDevice()
 
         /*! enumerate display modes */
         {
+#ifndef D3D9
             uint32 dwAdapterModeCount = g_pD3D->GetAdapterModeCount(g_XBVideo.GetDisplayAdapter());
+#else
+            XTL::D3DDISPLAYMODE d3ddm;
+            g_pD3D->GetAdapterDisplayMode(g_XBVideo.GetDisplayAdapter(), &d3ddm);
+            /* EnumAdapterModes and GetAdapterModeCount now take a D3DFORMAT.
+             * 
+             * The format supports an expanding set of display modes. 
+             * To protect applications from enumerating formats that were 
+             * not invented when the application shipped, the application 
+             * must tell Direct3D the format for the display modes that 
+             * should be enumerated. The resulting array of display modes 
+             * will differ only by width, height, and refresh rate.
+             */
+            uint32 dwAdapterModeCount = g_pD3D->GetAdapterModeCount(g_XBVideo.GetDisplayAdapter(), d3ddm.Format);
+#endif
 
             SendMessage(g_hVideoResolution, CB_ADDSTRING, 0, (LPARAM)"Automatic (Default)");
 
@@ -325,8 +364,22 @@ VOID RefreshDirect3DDevice()
                 char *szFormat = 0;
 
                 XTL::D3DDISPLAYMODE displayMode;
-
+#ifndef D3D9
                 g_pD3D->EnumAdapterModes(g_XBVideo.GetDisplayAdapter(), v, &displayMode);
+#else
+                XTL::D3DDISPLAYMODE d3ddm;
+                g_pD3D->GetAdapterDisplayMode(g_XBVideo.GetDisplayAdapter(), &d3ddm);
+                /* EnumAdapterModes and GetAdapterModeCount now take a D3DFORMAT.
+                 * 
+                 * The format supports an expanding set of display modes. 
+                 * To protect applications from enumerating formats that were 
+                 * not invented when the application shipped, the application 
+                 * must tell Direct3D the format for the display modes that 
+                 * should be enumerated. The resulting array of display modes 
+                 * will differ only by width, height, and refresh rate.
+                 */
+                g_pD3D->EnumAdapterModes(g_XBVideo.GetDisplayAdapter(), d3ddm.Format, v, &displayMode);
+#endif
 
                 switch(displayMode.Format)
                 {

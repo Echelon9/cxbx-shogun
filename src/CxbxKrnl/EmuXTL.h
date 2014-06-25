@@ -55,7 +55,11 @@ namespace XTL
 	#include "EmuXInput.h"
 }
 
+#ifndef D3D9
 extern XTL::LPDIRECT3DDEVICE8   g_pD3DDevice;
+#else
+extern XTL::LPDIRECT3DDEVICE9   g_pD3DDevice;
+#endif
 extern DWORD                    g_CurrentVertexShader;
 extern XTL::PIXEL_SHADER *		g_CurrentPixelShader;
 extern BOOL                     g_bFakePixelShaderLoaded;

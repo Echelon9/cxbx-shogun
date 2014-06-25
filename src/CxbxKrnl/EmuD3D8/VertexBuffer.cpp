@@ -144,7 +144,11 @@ void XTL::VertexPatcher::CacheStream(VertexPatchDesc *pPatchDesc,
                                      UINT             uiStream)
 {
     UINT                       uiStride;
+#ifndef D3D9
     IDirect3DVertexBuffer8    *pOrigVertexBuffer;
+#else
+    IDirect3DVertexBuffer9    *pOrigVertexBuffer;
+#endif
     XTL::D3DVERTEXBUFFER_DESC  Desc;
     void                      *pCalculateData = NULL;
     uint32                     uiKey;
@@ -197,7 +201,11 @@ void XTL::VertexPatcher::CacheStream(VertexPatchDesc *pPatchDesc,
         {
             CxbxKrnlCleanup("Could not retrieve original buffer size");
         }
+#ifndef D3D9
         if(FAILED(pOrigVertexBuffer->Lock(0, 0, (uint08**)&pCalculateData, 0)))
+#else
+        if(FAILED(pOrigVertexBuffer->Lock(0, 0, (void**)&pCalculateData, 0)))
+#endif
         {
             CxbxKrnlCleanup("Couldn't lock the original buffer");
         }
@@ -268,7 +276,11 @@ bool XTL::VertexPatcher::ApplyCachedStream(VertexPatchDesc *pPatchDesc,
 										   bool			   *pbFatalError)
 {
     UINT                       uiStride;
+#ifndef D3D9
     IDirect3DVertexBuffer8    *pOrigVertexBuffer;
+#else
+    IDirect3DVertexBuffer9    *pOrigVertexBuffer;
+#endif
     XTL::D3DVERTEXBUFFER_DESC  Desc;
     void                      *pCalculateData = NULL;
     UINT                       uiLength;
@@ -278,7 +290,11 @@ bool XTL::VertexPatcher::ApplyCachedStream(VertexPatchDesc *pPatchDesc,
 
     if(!pPatchDesc->pVertexStreamZeroData)
     {
+#ifndef D3D9
         g_pD3DDevice->GetStreamSource(uiStream, &pOrigVertexBuffer, &uiStride);
+#else
+        g_pD3DDevice->GetStreamSource(uiStream, &pOrigVertexBuffer, 0, &uiStride);
+#endif
         if(!pOrigVertexBuffer)
 		{
 			/*if(!g_pVertexBuffer || !g_pVertexBuffer->EmuVertexBuffer8)
@@ -327,7 +343,11 @@ bool XTL::VertexPatcher::ApplyCachedStream(VertexPatchDesc *pPatchDesc,
         {
             if(!pPatchDesc->pVertexStreamZeroData)
             {
+#ifndef D3D9
                 if(FAILED(pOrigVertexBuffer->Lock(0, 0, (uint08**)&pCalculateData, 0)))
+#else
+                if(FAILED(pOrigVertexBuffer->Lock(0, 0, (void**)&pCalculateData, 0)))
+#endif
                 {
                     CxbxKrnlCleanup("Couldn't lock the original buffer");
                 }
@@ -372,7 +392,11 @@ bool XTL::VertexPatcher::ApplyCachedStream(VertexPatchDesc *pPatchDesc,
             {
                 m_pStreams[uiStream].pOriginalStream = pOrigVertexBuffer;
                 m_pStreams[uiStream].uiOrigStride = uiStride;
+#ifndef D3D9
                 g_pD3DDevice->SetStreamSource(uiStream, pCachedStream->Stream.pPatchedStream, pCachedStream->Stream.uiNewStride);
+#else
+                g_pD3DDevice->SetStreamSource(uiStream, pCachedStream->Stream.pPatchedStream, 0, pCachedStream->Stream.uiNewStride);
+#endif
                 pCachedStream->Stream.pPatchedStream->AddRef();
                 pCachedStream->Stream.pOriginalStream->AddRef();
                 m_pStreams[uiStream].pPatchedStream = pCachedStream->Stream.pPatchedStream;
@@ -447,8 +471,13 @@ bool XTL::VertexPatcher::PatchStream(VertexPatchDesc *pPatchDesc,
 
     // Do some groovy patchin'
     
+#ifndef D3D9
     IDirect3DVertexBuffer8    *pOrigVertexBuffer;
     IDirect3DVertexBuffer8    *pNewVertexBuffer;
+#else
+    IDirect3DVertexBuffer9    *pOrigVertexBuffer;
+    IDirect3DVertexBuffer9    *pNewVertexBuffer;
+#endif
     uint08                    *pOrigData;
     uint08                    *pNewData;
     UINT                       uiStride;
@@ -459,7 +488,11 @@ bool XTL::VertexPatcher::PatchStream(VertexPatchDesc *pPatchDesc,
 
     if(!pPatchDesc->pVertexStreamZeroData)
     {
+#ifndef D3D9
         g_pD3DDevice->GetStreamSource(uiStream, &pOrigVertexBuffer, &uiStride);
+#else
+        g_pD3DDevice->GetStreamSource(uiStream, &pOrigVertexBuffer, 0, &uiStride);
+#endif
         if(FAILED(pOrigVertexBuffer->GetDesc(&Desc)))
         {
             CxbxKrnlCleanup("Could not retrieve original buffer size");
@@ -468,12 +501,21 @@ bool XTL::VertexPatcher::PatchStream(VertexPatchDesc *pPatchDesc,
         pPatchDesc->dwVertexCount = Desc.Size / uiStride;
         dwNewSize = pPatchDesc->dwVertexCount * pStreamPatch->ConvertedStride;
 
+#ifndef D3D9
         if(FAILED(pOrigVertexBuffer->Lock(0, 0, &pOrigData, 0)))
+#else
+        if(FAILED(pOrigVertexBuffer->Lock(0, 0, (void**)&pOrigData, 0)))
+#endif
         {
             CxbxKrnlCleanup("Couldn't lock the original buffer");
         }
+#ifndef D3D9
         g_pD3DDevice->CreateVertexBuffer(dwNewSize, 0, 0, XTL::D3DPOOL_MANAGED, &pNewVertexBuffer);
         if(FAILED(pNewVertexBuffer->Lock(0, 0, &pNewData, 0)))
+#else
+        g_pD3DDevice->CreateVertexBuffer(dwNewSize, 0, 0, XTL::D3DPOOL_MANAGED, &pNewVertexBuffer, NULL);
+        if(FAILED(pNewVertexBuffer->Lock(0, 0, (void**)&pNewData, 0)))
+#endif
         {
             CxbxKrnlCleanup("Couldn't lock the new buffer");
         }
@@ -679,7 +721,11 @@ bool XTL::VertexPatcher::PatchStream(VertexPatchDesc *pPatchDesc,
         pNewVertexBuffer->Unlock();
         pOrigVertexBuffer->Unlock();
 
+#ifndef D3D9
         if(FAILED(g_pD3DDevice->SetStreamSource(uiStream, pNewVertexBuffer, pStreamPatch->ConvertedStride)))
+#else
+        if(FAILED(g_pD3DDevice->SetStreamSource(uiStream, pNewVertexBuffer, 0, pStreamPatch->ConvertedStride)))
+#endif
         {
             CxbxKrnlCleanup("Failed to set the type patched buffer as the new stream source!\n");
         }
@@ -731,8 +777,13 @@ bool XTL::VertexPatcher::NormalizeTexCoords(VertexPatchDesc *pPatchDesc, UINT ui
     if(!bHasLinearTex)
         return false;
 
+#ifndef D3D9
     IDirect3DVertexBuffer8 *pOrigVertexBuffer;
     IDirect3DVertexBuffer8 *pNewVertexBuffer;
+#else
+    IDirect3DVertexBuffer9 *pOrigVertexBuffer;
+    IDirect3DVertexBuffer9 *pNewVertexBuffer;
+#endif
     PATCHEDSTREAM *pStream;
     uint08 *pData, *pUVData;
     uint uiStride, uiVertexCount;
@@ -749,7 +800,11 @@ bool XTL::VertexPatcher::NormalizeTexCoords(VertexPatchDesc *pPatchDesc, UINT ui
     {
         // Copy stream for patching and caching.
 
+#ifndef D3D9
         g_pD3DDevice->GetStreamSource(uiStream, &pOrigVertexBuffer, &uiStride);
+#else
+        g_pD3DDevice->GetStreamSource(uiStream, &pOrigVertexBuffer, 0, &uiStride);
+#endif
         XTL::D3DVERTEXBUFFER_DESC Desc;
         if(!pOrigVertexBuffer || FAILED(pOrigVertexBuffer->GetDesc(&Desc)))
         {
@@ -758,12 +813,21 @@ bool XTL::VertexPatcher::NormalizeTexCoords(VertexPatchDesc *pPatchDesc, UINT ui
         uiVertexCount = Desc.Size / uiStride;
         
         uint08 *pOrigData;
+#ifndef D3D9
         if(FAILED(pOrigVertexBuffer->Lock(0, 0, &pOrigData, 0)))
+#else
+        if(FAILED(pOrigVertexBuffer->Lock(0, 0, (void**)&pOrigData, 0)))
+#endif
         {
             CxbxKrnlCleanup("Couldn't lock original FVF buffer.");
         }
+#ifndef D3D9
         g_pD3DDevice->CreateVertexBuffer(Desc.Size, 0, 0, XTL::D3DPOOL_MANAGED, &pNewVertexBuffer);
         if(FAILED(pNewVertexBuffer->Lock(0, 0, &pData, 0)))
+#else
+        g_pD3DDevice->CreateVertexBuffer(Desc.Size, 0, 0, XTL::D3DPOOL_MANAGED, &pNewVertexBuffer, NULL);
+        if(FAILED(pNewVertexBuffer->Lock(0, 0, (void**)&pData, 0)))
+#endif
         {
             CxbxKrnlCleanup("Couldn't lock new FVF buffer.");
         }
@@ -851,7 +915,11 @@ bool XTL::VertexPatcher::NormalizeTexCoords(VertexPatchDesc *pPatchDesc, UINT ui
     {
         pNewVertexBuffer->Unlock();
 
+#ifndef D3D9
         if(FAILED(g_pD3DDevice->SetStreamSource(uiStream, pNewVertexBuffer, uiStride)))
+#else
+        if(FAILED(g_pD3DDevice->SetStreamSource(uiStream, pNewVertexBuffer, 0, uiStride)))
+#endif
         {
             CxbxKrnlCleanup("Failed to set the texcoord patched FVF buffer as the new stream source.");
         }
@@ -932,7 +1000,11 @@ bool XTL::VertexPatcher::PatchPrimitive(VertexPatchDesc *pPatchDesc,
 
     if(pPatchDesc->pVertexStreamZeroData == 0)
     {
+#ifndef D3D9
         g_pD3DDevice->GetStreamSource(0, &pStream->pOriginalStream, &pStream->uiOrigStride);
+#else
+        g_pD3DDevice->GetStreamSource(0, &pStream->pOriginalStream, 0, &pStream->uiOrigStride);
+#endif
         pStream->uiNewStride = pStream->uiOrigStride; // The stride is still the same
     }
     else
@@ -978,16 +1050,28 @@ bool XTL::VertexPatcher::PatchPrimitive(VertexPatchDesc *pPatchDesc,
             dwNewSizeWR = dwNewSize + dwOriginalSizeWR - dwOriginalSize;
         }
 
+#ifndef D3D9
         g_pD3DDevice->CreateVertexBuffer(dwNewSizeWR, 0, 0, XTL::D3DPOOL_MANAGED, &pStream->pPatchedStream);
+#else
+        g_pD3DDevice->CreateVertexBuffer(dwNewSizeWR, 0, 0, XTL::D3DPOOL_MANAGED, &pStream->pPatchedStream, NULL);
+#endif
 
         if(pStream->pOriginalStream != 0)
         {
+#ifndef D3D9
             pStream->pOriginalStream->Lock(0, 0, &pOrigVertexData, 0);
+#else
+            pStream->pOriginalStream->Lock(0, 0, (void**)&pOrigVertexData, 0);
+#endif
         }
 
         if(pStream->pPatchedStream != 0)
         {
+#ifndef D3D9
             pStream->pPatchedStream->Lock(0, 0, &pPatchedVertexData, 0);
+#else
+            pStream->pPatchedStream->Lock(0, 0, (void**)&pPatchedVertexData, 0);
+#endif
         }
     }
     else
@@ -1067,7 +1151,11 @@ bool XTL::VertexPatcher::PatchPrimitive(VertexPatchDesc *pPatchDesc,
         pStream->pOriginalStream->Unlock();
         pStream->pPatchedStream->Unlock();
 
+#ifndef D3D9
         g_pD3DDevice->SetStreamSource(0, pStream->pPatchedStream, pStream->uiOrigStride);
+#else
+        g_pD3DDevice->SetStreamSource(0, pStream->pPatchedStream, 0, pStream->uiOrigStride);
+#endif
     }
 
     m_bPatched = true;
@@ -1117,7 +1205,11 @@ bool XTL::VertexPatcher::Restore()
     {
         if(m_pStreams[uiStream].pOriginalStream != NULL && m_pStreams[uiStream].pPatchedStream != NULL)
         {
+#ifndef D3D9
             g_pD3DDevice->SetStreamSource(0, m_pStreams[uiStream].pOriginalStream, m_pStreams[uiStream].uiOrigStride);
+#else
+            g_pD3DDevice->SetStreamSource(0, m_pStreams[uiStream].pOriginalStream, 0, m_pStreams[uiStream].uiOrigStride);
+#endif
         }
 
         if(m_pStreams[uiStream].pOriginalStream != NULL)
@@ -1339,7 +1431,11 @@ VOID XTL::EmuFlushIVB()
 
     if(bFVF)
     {
+#ifndef D3D9
         g_pD3DDevice->SetVertexShader(dwCurFVF);
+#else
+        g_pD3DDevice->SetFVF(dwCurFVF);
+#endif
     }
 
     g_pD3DDevice->DrawPrimitiveUP(
@@ -1352,7 +1448,11 @@ VOID XTL::EmuFlushIVB()
 
     if(bFVF)
     {
+#ifndef D3D9
         g_pD3DDevice->SetVertexShader(g_CurrentVertexShader);
+#else
+        g_pD3DDevice->SetFVF(g_CurrentVertexShader);
+#endif
     }
 
     VertPatch.Restore();

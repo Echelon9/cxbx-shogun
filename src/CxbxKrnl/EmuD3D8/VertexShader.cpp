@@ -1483,7 +1483,8 @@ static DWORD VshGetDeclarationSize(DWORD *pDeclaration)
 
 DWORD Xb2PCRegisterType(DWORD VertexRegister)
 {
-    DWORD PCRegisterType;
+    DWORD PCRegisterType = -1;
+#ifndef D3D9
     switch(VertexRegister)
     {
     case -1:
@@ -1543,27 +1544,44 @@ DWORD Xb2PCRegisterType(DWORD VertexRegister)
         PCRegisterType = -1;
         break;
     }
+#endif
     return PCRegisterType;
 }
 
 static inline DWORD VshGetTokenType(DWORD Token)
 {
+#ifndef D3D9
     return (Token & D3DVSD_TOKENTYPEMASK) >> D3DVSD_TOKENTYPESHIFT;
+#else
+    return 0;//(Token & D3DVSD_TOKENTYPEMASK) >> D3DVSD_TOKENTYPESHIFT;
+#endif
 }
 
 static inline DWORD VshGetVertexRegister(DWORD Token)
 {
+#ifndef D3D9
     return (Token & D3DVSD_VERTEXREGMASK) >> D3DVSD_VERTEXREGSHIFT;
+#else
+    return 0;//(Token & D3DVSD_VERTEXREGMASK) >> D3DVSD_VERTEXREGSHIFT;
+#endif
 }
 
 static inline DWORD VshGetVertexRegisterIn(DWORD Token)
 {
+#ifndef D3D9
     return (Token & D3DVSD_VERTEXREGINMASK) >> D3DVSD_VERTEXREGINSHIFT;
+#else
+    return 0;//(Token & D3DVSD_VERTEXREGINMASK) >> D3DVSD_VERTEXREGINSHIFT;
+#endif
 }
 
 static inline DWORD VshGetVertexStream(DWORD Token)
 {
+#ifndef D3D9
     return (Token & D3DVSD_STREAMNUMBERMASK) >> D3DVSD_STREAMNUMBERSHIFT;
+#else
+    return 0;//(Token & D3DVSD_STREAMNUMBERMASK) >> D3DVSD_STREAMNUMBERSHIFT;
+#endif
 }
 
 static void VshConvertToken_NOP(DWORD *pToken)
@@ -1581,6 +1599,7 @@ static DWORD VshConvertToken_CONSTMEM(DWORD *pToken)
     // D3DVSD_CONST
     DbgVshPrintf("\tD3DVSD_CONST(");
 
+#ifndef D3D9
     DWORD ConstantAddress = ((*pToken >> D3DVSD_CONSTADDRESSSHIFT) & 0xFF);
     DWORD Count           = (*pToken & D3DVSD_CONSTCOUNTMASK) >> D3DVSD_CONSTCOUNTSHIFT;
 
@@ -1593,6 +1612,9 @@ static DWORD VshConvertToken_CONSTMEM(DWORD *pToken)
         DbgVshPrintf("\t0x%08X,\n", pToken);
     }
     return Count;
+#else
+    return 0;//Count;
+#endif
 }
 
 static void VshConverToken_TESSELATOR(DWORD   *pToken,
@@ -1600,6 +1622,7 @@ static void VshConverToken_TESSELATOR(DWORD   *pToken,
 {
     using namespace XTL;
 
+#ifndef D3D9
     // TODO: Investigate why Xb2PCRegisterType is only used for fixed function vertex shaders
     // D3DVSD_TESSUV
     if(*pToken & 0x10000000)
@@ -1656,6 +1679,7 @@ static void VshConverToken_TESSELATOR(DWORD   *pToken,
         DbgVshPrintf("),\n");
         *pToken = D3DVSD_TESSNORMAL(NewVertexRegisterIn, NewVertexRegisterOut);
     }
+#endif
 }
 
 static boolean VshAddStreamPatch(VSH_PATCH_DATA *pPatchData)
@@ -1683,6 +1707,7 @@ static boolean VshAddStreamPatch(VSH_PATCH_DATA *pPatchData)
 static void VshConvertToken_STREAM(DWORD          *pToken,
                                    VSH_PATCH_DATA *pPatchData)
 {
+#ifndef D3D9
     // D3DVSD_STREAM_TESS
     if(*pToken & D3DVSD_STREAMTESSMASK)
     {
@@ -1705,20 +1730,24 @@ static void VshConvertToken_STREAM(DWORD          *pToken,
 
         pPatchData->StreamPatchData.NbrStreams++;
     }
+#endif
 }
 
 static void VshConvertToken_STREAMDATA_SKIP(DWORD *pToken)
 {
     using namespace XTL;
 
+#ifndef D3D9
     XTL::DWORD SkipCount = (*pToken & D3DVSD_SKIPCOUNTMASK) >> D3DVSD_SKIPCOUNTSHIFT;
     DbgVshPrintf("\tD3DVSD_SKIP(%d),\n", SkipCount);
+#endif
 }
 
 static void VshConvertToken_STREAMDATA_SKIPBYTES(DWORD *pToken)
 {
     using namespace XTL;
 
+#ifndef D3D9
     XTL::DWORD SkipBytesCount = (*pToken & D3DVSD_SKIPCOUNTMASK) >> D3DVSD_SKIPCOUNTSHIFT;
     DbgVshPrintf("\tD3DVSD_SKIPBYTES(%d), /* xbox ext. */\n", SkipBytesCount);
     if(SkipBytesCount % sizeof(XTL::DWORD))
@@ -1726,6 +1755,7 @@ static void VshConvertToken_STREAMDATA_SKIPBYTES(DWORD *pToken)
         EmuWarning("D3DVSD_SKIPBYTES can't be converted to D3DVSD_SKIP, not divisble by 4.");
     }
     *pToken = D3DVSD_SKIP(SkipBytesCount / sizeof(XTL::DWORD));
+#endif
 }
 
 static void VshConvertToken_STREAMDATA_REG(DWORD          *pToken,
@@ -1734,6 +1764,7 @@ static void VshConvertToken_STREAMDATA_REG(DWORD          *pToken,
 {
     using namespace XTL;
 
+#ifndef D3D9
     DbgVshPrintf("\tD3DVSD_REG(");
 
     XTL::DWORD VertexRegister = VshGetVertexRegister(*pToken);
@@ -1882,6 +1913,7 @@ static void VshConvertToken_STREAMDATA_REG(DWORD          *pToken,
     {
         EmuWarning("/* WARNING: Fatal type mismatch, no fitting type! */\n");
     }
+#endif
 }
 
 static void VshConvertToken_STREAMDATA(DWORD          *pToken,
@@ -1890,6 +1922,7 @@ static void VshConvertToken_STREAMDATA(DWORD          *pToken,
 {
     using namespace XTL;
 
+#ifndef D3D9
     // D3DVSD_SKIP
     if(*pToken & 0x10000000)
     {
@@ -1905,6 +1938,7 @@ static void VshConvertToken_STREAMDATA(DWORD          *pToken,
     {
         VshConvertToken_STREAMDATA_REG(pToken, IsFixedFunction, pPatchData);
     }
+#endif
 }
 
 static DWORD VshRecompileToken(DWORD          *pToken,
@@ -1915,6 +1949,7 @@ static DWORD VshRecompileToken(DWORD          *pToken,
 
     XTL::DWORD Step = 1;
 
+#ifndef D3D9
     switch(VshGetTokenType(*pToken))
     {
     case D3DVSD_TOKEN_NOP:
@@ -1944,6 +1979,7 @@ static DWORD VshRecompileToken(DWORD          *pToken,
         DbgVshPrintf("Unknown token type: %d\n", VshGetTokenType(*pToken));
         break;
     }
+#endif
 
     return Step;
 }
@@ -2092,12 +2128,14 @@ extern HRESULT XTL::EmuRecompileVshFunction
 		else
 		{
 
+#ifndef D3D9
 			hRet = D3DXAssembleShader(pShaderDisassembly,
                                   strlen(pShaderDisassembly),
                                   D3DXASM_SKIPVALIDATION,
                                   NULL,
                                   ppRecompiled,
                                   &pErrors);
+#endif
 		}
 
         if (FAILED(hRet))

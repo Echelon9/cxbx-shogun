@@ -199,6 +199,7 @@ BOOL bV1R0Reg = FALSE;
 
 HRESULT XTL::CreatePixelShaderFunction(X_D3DPIXELSHADERDEF *pPSD, LPD3DXBUFFER* ppRecompiled)
 {
+#ifndef D3D9
 	char szCode[9000] = {0};
 
 	pCodeBuffer = szCode;
@@ -819,6 +820,9 @@ HRESULT XTL::CreatePixelShaderFunction(X_D3DPIXELSHADERDEF *pPSD, LPD3DXBUFFER* 
 	}
 
 	return hRet;
+#else
+    return E_FAIL; //hRet;
+#endif
 }
 
 #define DEF_VAR_TABLE_LEN	7

@@ -55,8 +55,13 @@ VertexPatchDesc;
 
 typedef struct _PATCHEDSTREAM
 {
+#ifndef D3D9
     IDirect3DVertexBuffer8 *pOriginalStream;
     IDirect3DVertexBuffer8 *pPatchedStream;
+#else
+    IDirect3DVertexBuffer9 *pOriginalStream;
+    IDirect3DVertexBuffer9 *pPatchedStream;
+#endif
     UINT                    uiOrigStride;
     UINT                    uiNewStride;
     bool                    bUsedCached;
