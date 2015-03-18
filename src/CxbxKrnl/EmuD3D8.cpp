@@ -1062,8 +1062,8 @@ static DWORD WINAPI EmuCreateDeviceProxy(LPVOID)
                     g_pD3DDevice->Clear(0, 0, D3DCLEAR_TARGET|D3DCLEAR_ZBUFFER|D3DCLEAR_STENCIL, 0xFF000000, 1.0f, 0);
                 else
                     g_pD3DDevice->Clear(0, 0, D3DCLEAR_TARGET, 0xFF000000, 0.0f, 0);
-				g_pD3DDevice->BeginScene();
-				g_pD3DDevice->EndScene();
+                g_pD3DDevice->BeginScene();
+                g_pD3DDevice->EndScene();
                 g_pD3DDevice->Present(0, 0, 0, 0);
 
                 // begin scene
@@ -2158,7 +2158,7 @@ HRESULT WINAPI XTL::EmuIDirect3DDevice8_CopyRects
         pDestPointsArray
     );
 #else
-   HRESULT hRet = S_OK;
+    HRESULT hRet = S_OK;
 
     for( UINT i = 0; i < cRects; i++ )
     {
