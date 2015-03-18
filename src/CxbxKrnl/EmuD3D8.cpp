@@ -2604,16 +2604,16 @@ HRESULT WINAPI XTL::EmuIDirect3DDevice8_GetRenderTarget
            GetCurrentThreadId(), ppRenderTarget);
 
 #ifndef D3D9
-    IDirect3DSurface8 *pSurface8 = g_pCachedRenderTarget->EmuSurface8;
+    IDirect3DSurface8 *pSurface = g_pCachedRenderTarget->EmuSurface8;
 #else
-    IDirect3DSurface9 *pSurface8 = g_pCachedRenderTarget->EmuSurface8;
+    IDirect3DSurface9 *pSurface = g_pCachedRenderTarget->EmuSurface8;
 #endif
 
-    pSurface8->AddRef();
+    pSurface->AddRef();
 
     *ppRenderTarget = g_pCachedRenderTarget;
 
-    DbgPrintf("EmuD3D8 (0x%X): RenderTarget := 0x%.08X\n", GetCurrentThreadId(), pSurface8);
+    DbgPrintf("EmuD3D8 (0x%X): RenderTarget := 0x%.08X\n", GetCurrentThreadId(), pSurface);
 
     EmuSwapFS();   // Xbox FS
 
@@ -2630,14 +2630,14 @@ XTL::X_D3DSurface * WINAPI XTL::EmuIDirect3DDevice8_GetRenderTarget2()
     DbgPrintf("EmuD3D8 (0x%X): EmuIDirect3DDevice8_GetRenderTarget2()\n", GetCurrentThreadId());
 
 #ifndef D3D9
-    IDirect3DSurface8 *pSurface8 = g_pCachedRenderTarget->EmuSurface8;
+    IDirect3DSurface8 *pSurface = g_pCachedRenderTarget->EmuSurface8;
 #else
-    IDirect3DSurface9 *pSurface8 = g_pCachedRenderTarget->EmuSurface8;
+    IDirect3DSurface9 *pSurface = g_pCachedRenderTarget->EmuSurface8;
 #endif
 
-    pSurface8->AddRef();
+    pSurface->AddRef();
 
-    DbgPrintf("EmuD3D8 (0x%X): RenderTarget := 0x%.08X\n", GetCurrentThreadId(), pSurface8);
+    DbgPrintf("EmuD3D8 (0x%X): RenderTarget := 0x%.08X\n", GetCurrentThreadId(), pSurface);
 
     EmuSwapFS();   // Xbox FS
 
@@ -2661,17 +2661,17 @@ HRESULT WINAPI XTL::EmuIDirect3DDevice8_GetDepthStencilSurface
            GetCurrentThreadId(), ppZStencilSurface);
 
 #ifndef D3D9
-    IDirect3DSurface8 *pSurface8 = g_pCachedZStencilSurface->EmuSurface8;
+    IDirect3DSurface8 *pSurface = g_pCachedZStencilSurface->EmuSurface8;
 #else
-    IDirect3DSurface9 *pSurface8 = g_pCachedZStencilSurface->EmuSurface8;
+    IDirect3DSurface9 *pSurface = g_pCachedZStencilSurface->EmuSurface8;
 #endif
 
-    if(pSurface8 != 0)
-        pSurface8->AddRef();
+    if(pSurface != 0)
+        pSurface->AddRef();
 
     *ppZStencilSurface = g_pCachedZStencilSurface;
 
-    DbgPrintf("EmuD3D8 (0x%X): DepthStencilSurface := 0x%.08X\n", GetCurrentThreadId(), pSurface8);
+    DbgPrintf("EmuD3D8 (0x%X): DepthStencilSurface := 0x%.08X\n", GetCurrentThreadId(), pSurface);
 
     EmuSwapFS();   // Xbox FS
 
@@ -2688,15 +2688,15 @@ XTL::X_D3DSurface * WINAPI XTL::EmuIDirect3DDevice8_GetDepthStencilSurface2()
     DbgPrintf("EmuD3D8 (0x%X): EmuIDirect3DDevice8_GetDepthStencilSurface2()\n", GetCurrentThreadId());
 
 #ifndef D3D9
-    IDirect3DSurface8 *pSurface8 = g_pCachedZStencilSurface->EmuSurface8;
+    IDirect3DSurface8 *pSurface = g_pCachedZStencilSurface->EmuSurface8;
 #else
-    IDirect3DSurface9 *pSurface8 = g_pCachedZStencilSurface->EmuSurface8;
+    IDirect3DSurface9 *pSurface = g_pCachedZStencilSurface->EmuSurface8;
 #endif
 
-    if(pSurface8 != 0)
-        pSurface8->AddRef();
+    if(pSurface != 0)
+        pSurface->AddRef();
 
-    DbgPrintf("EmuD3D8 (0x%X): DepthStencilSurface := 0x%.08X\n", GetCurrentThreadId(), pSurface8);
+    DbgPrintf("EmuD3D8 (0x%X): DepthStencilSurface := 0x%.08X\n", GetCurrentThreadId(), pSurface);
 
     EmuSwapFS();   // Xbox FS
 
@@ -3939,9 +3939,9 @@ HRESULT WINAPI XTL::EmuIDirect3DDevice8_SetTexture
            GetCurrentThreadId(), Stage, pTexture);
 
 #ifndef D3D9
-    IDirect3DBaseTexture8 *pBaseTexture8 = NULL;
+    IDirect3DBaseTexture8 *pBaseTexture = NULL;
 #else
-    IDirect3DBaseTexture9 *pBaseTexture8 = NULL;
+    IDirect3DBaseTexture9 *pBaseTexture = NULL;
 #endif
 
     EmuD3DActiveTexture[Stage] = pTexture;
@@ -3970,12 +3970,12 @@ HRESULT WINAPI XTL::EmuIDirect3DDevice8_SetTexture
 				pTexture->Common &= ~X_D3DCOMMON_ISLOCKED;
 			}*/
 
-            pBaseTexture8 = pTexture->EmuBaseTexture8;
+            pBaseTexture = pTexture->EmuBaseTexture8;
 
 			// Let's be SURE that the texture is unlocked AND unswizzled before
 			// we set it!!!
 		//	EmuUnswizzleTextureStages();
-		//	pBaseTexture8 = EmuD3DActiveTexture[Stage]->EmuBaseTexture8;
+		//	pBaseTexture = EmuD3DActiveTexture[Stage]->EmuBaseTexture8;
 
             #ifdef _DEBUG_DUMP_TEXTURE_SETTEXTURE
             if(pTexture != NULL && (pTexture->EmuTexture8 != NULL))
@@ -4042,7 +4042,7 @@ HRESULT WINAPI XTL::EmuIDirect3DDevice8_SetTexture
 
     //HRESULT hRet = g_pD3DDevice->SetTexture(Stage, pDummyTexture[Stage]);
 
-    HRESULT hRet = g_pD3DDevice->SetTexture(Stage, (g_iWireframe == 0) ? pBaseTexture8 : 0);
+    HRESULT hRet = g_pD3DDevice->SetTexture(Stage, (g_iWireframe == 0) ? pBaseTexture : 0);
 
     EmuSwapFS();   // XBox FS
 
@@ -4688,13 +4688,13 @@ HRESULT WINAPI XTL::EmuIDirect3DDevice8_Present
 #ifndef D3D9
 		IDirect3DSurface8 *pBackBuffer;
 #else
-        IDirect3DSurface9 *pBackBuffer;
+		IDirect3DSurface9 *pBackBuffer;
 #endif
 
 #ifndef D3D9
 		g_pD3DDevice->GetBackBuffer(0, D3DBACKBUFFER_TYPE_MONO, &pBackBuffer);
 #else
-        g_pD3DDevice->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &pBackBuffer);
+		g_pD3DDevice->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &pBackBuffer);
 #endif
 
 		pBackBuffer->UnlockRect();
@@ -5611,17 +5611,17 @@ ULONG WINAPI XTL::EmuIDirect3DResource8_AddRef
         else
         {
 #ifndef D3D9
-            IDirect3DResource8 *pResource8 = pThis->EmuResource8;
+            IDirect3DResource8 *pResource = pThis->EmuResource8;
 #else
-            IDirect3DResource9 *pResource8 = pThis->EmuResource8;
+            IDirect3DResource9 *pResource = pThis->EmuResource8;
 #endif
 
             if(pThis->Lock == 0x8000BEEF)
                 uRet = ++pThis->Lock;
-            else if(pResource8 != 0)
-                uRet = pResource8->AddRef();
+            else if(pResource != 0)
+                uRet = pResource->AddRef();
 
-		    if(!pResource8)
+		    if(!pResource)
 			    __asm int 3;
 			    //EmuWarning("EmuResource is not a valid pointer!");
 
@@ -5690,9 +5690,9 @@ ULONG WINAPI XTL::EmuIDirect3DResource8_Release
     else
     {
 #ifndef D3D9
-        IDirect3DResource8 *pResource8 = pThis->EmuResource8;
+        IDirect3DResource8 *pResource = pThis->EmuResource8;
 #else
-        IDirect3DResource9 *pResource8 = pThis->EmuResource8;
+        IDirect3DResource9 *pResource = pThis->EmuResource8;
 #endif
 
         if(pThis->Lock == 0x8000BEEF)
@@ -5700,7 +5700,7 @@ ULONG WINAPI XTL::EmuIDirect3DResource8_Release
             delete[] (PVOID)pThis->Data;
             uRet = --pThis->Lock;
         }
-        else if(pResource8 != 0)
+        else if(pResource != 0)
         {
             for(int v=0;v<16;v++)
             {
@@ -5712,10 +5712,10 @@ ULONG WINAPI XTL::EmuIDirect3DResource8_Release
             }
 
             #ifdef _DEBUG_TRACE_VB
-            D3DRESOURCETYPE Type = pResource8->GetType();
+            D3DRESOURCETYPE Type = pResource->GetType();
             #endif
 
-            uRet = pResource8->Release();
+            uRet = pResource->Release();
 
             if(uRet == 0)
             {
@@ -5724,8 +5724,8 @@ ULONG WINAPI XTL::EmuIDirect3DResource8_Release
                 #ifdef _DEBUG_TRACE_VB
                 if(Type == D3DRTYPE_VERTEXBUFFER)
                 {
-                    g_VBTrackTotal.remove(pResource8);
-                    g_VBTrackDisable.remove(pResource8);
+                    g_VBTrackTotal.remove(pResource);
+                    g_VBTrackDisable.remove(pResource);
                 }
                 #endif
 
@@ -5761,9 +5761,9 @@ BOOL WINAPI XTL::EmuIDirect3DResource8_IsBusy
     //*/
 
 #ifndef D3D9
-    IDirect3DResource8 *pResource8 = pThis->EmuResource8;
+    IDirect3DResource8 *pResource = pThis->EmuResource8;
 #else
-    IDirect3DResource9 *pResource8 = pThis->EmuResource8;
+    IDirect3DResource9 *pResource = pThis->EmuResource8;
 #endif
 
     EmuSwapFS();   // XBox FS
@@ -6045,14 +6045,14 @@ HRESULT WINAPI XTL::EmuIDirect3DSurface8_GetDesc
     else
     {
 #ifndef D3D9
-        IDirect3DSurface8 *pSurface8 = pThis->EmuSurface8;
+        IDirect3DSurface8 *pSurface = pThis->EmuSurface8;
 #else
-        IDirect3DSurface9 *pSurface8 = pThis->EmuSurface8;
+        IDirect3DSurface9 *pSurface = pThis->EmuSurface8;
 #endif
 
         D3DSURFACE_DESC SurfaceDesc;
 
-        hRet = pSurface8->GetDesc(&SurfaceDesc);
+        hRet = pSurface->GetDesc(&SurfaceDesc);
 
         // rearrange into windows format (remove D3DPool)
         {
@@ -6132,9 +6132,9 @@ HRESULT WINAPI XTL::EmuIDirect3DSurface8_LockRect
     else
     {
 #ifndef D3D9
-        IDirect3DSurface8 *pSurface8 = pThis->EmuSurface8;
+        IDirect3DSurface8 *pSurface = pThis->EmuSurface8;
 #else
-        IDirect3DSurface9 *pSurface8 = pThis->EmuSurface8;
+        IDirect3DSurface9 *pSurface = pThis->EmuSurface8;
 #endif
 
         DWORD NewFlags = 0;
@@ -6151,9 +6151,9 @@ HRESULT WINAPI XTL::EmuIDirect3DSurface8_LockRect
 		try
 		{
 			// Remove old lock(s)
-			pSurface8->UnlockRect();
+			pSurface->UnlockRect();
 
-			hRet = pSurface8->LockRect(pLockedRect, pRect, NewFlags);
+			hRet = pSurface->LockRect(pLockedRect, pRect, NewFlags);
 
 			if(FAILED(hRet))
 				EmuWarning("LockRect Failed!");
@@ -6188,12 +6188,12 @@ DWORD WINAPI XTL::EmuIDirect3DBaseTexture8_GetLevelCount
     EmuVerifyResourceIsRegistered(pThis);
 
 #ifndef D3D9
-    IDirect3DBaseTexture8 *pBaseTexture8 = pThis->EmuBaseTexture8;
+    IDirect3DBaseTexture8 *pBaseTexture = pThis->EmuBaseTexture8;
 #else
-    IDirect3DBaseTexture9 *pBaseTexture8 = pThis->EmuBaseTexture8;
+    IDirect3DBaseTexture9 *pBaseTexture = pThis->EmuBaseTexture8;
 #endif
 
-    DWORD dwRet = pBaseTexture8->GetLevelCount();
+    DWORD dwRet = pBaseTexture->GetLevelCount();
 
     EmuSwapFS();   // XBox FS
 
@@ -6270,9 +6270,9 @@ HRESULT WINAPI XTL::EmuIDirect3DTexture8_LockRect
     else
     {
 #ifndef D3D9
-        IDirect3DTexture8 *pTexture8 = pThis->EmuTexture8;
+        IDirect3DTexture8 *pTexture = pThis->EmuTexture8;
 #else
-        IDirect3DTexture9 *pTexture8 = pThis->EmuTexture8;
+        IDirect3DTexture9 *pTexture = pThis->EmuTexture8;
 #endif
 
         DWORD NewFlags = 0;
@@ -6301,9 +6301,9 @@ HRESULT WINAPI XTL::EmuIDirect3DTexture8_LockRect
 		}
 		else
 		{
-			pTexture8->UnlockRect(Level);
+			pTexture->UnlockRect(Level);
 
-			hRet = pTexture8->LockRect(Level, pLockedRect, pRect, NewFlags);
+			hRet = pTexture->LockRect(Level, pLockedRect, pRect, NewFlags);
 
 			pThis->Common |= X_D3DCOMMON_ISLOCKED;
 		}
@@ -6357,9 +6357,9 @@ HRESULT WINAPI XTL::EmuIDirect3DTexture8_GetSurfaceLevel
 		else
 		{
 #ifndef D3D9
-			IDirect3DTexture8 *pTexture8 = pThis->EmuTexture8;
+			IDirect3DTexture8 *pTexture = pThis->EmuTexture8;
 #else
-            IDirect3DTexture9 *pTexture8 = pThis->EmuTexture8;
+			IDirect3DTexture9 *pTexture = pThis->EmuTexture8;
 #endif
 
 			*ppSurfaceLevel = new X_D3DSurface();
@@ -6369,7 +6369,7 @@ HRESULT WINAPI XTL::EmuIDirect3DTexture8_GetSurfaceLevel
 			(*ppSurfaceLevel)->Format = 0;
 			(*ppSurfaceLevel)->Size = 0;
 
-			hRet = pTexture8->GetSurfaceLevel(Level, &((*ppSurfaceLevel)->EmuSurface8));
+			hRet = pTexture->GetSurfaceLevel(Level, &((*ppSurfaceLevel)->EmuSurface8));
 
 			if(FAILED(hRet))
 			{
@@ -6414,12 +6414,12 @@ HRESULT WINAPI XTL::EmuIDirect3DVolumeTexture8_LockBox
     EmuVerifyResourceIsRegistered(pThis);
 
 #ifndef D3D9
-    IDirect3DVolumeTexture8 *pVolumeTexture8 = pThis->EmuVolumeTexture8;
+    IDirect3DVolumeTexture8 *pVolumeTexture = pThis->EmuVolumeTexture8;
 #else
-    IDirect3DVolumeTexture9 *pVolumeTexture8 = pThis->EmuVolumeTexture8;
+    IDirect3DVolumeTexture9 *pVolumeTexture = pThis->EmuVolumeTexture8;
 #endif
 
-    HRESULT hRet = pVolumeTexture8->LockBox(Level, pLockedVolume, pBox, Flags);
+    HRESULT hRet = pVolumeTexture->LockBox(Level, pLockedVolume, pBox, Flags);
 
     if(FAILED(hRet))
         EmuWarning("LockBox Failed!");
@@ -6458,12 +6458,12 @@ HRESULT WINAPI XTL::EmuIDirect3DCubeTexture8_LockRect
     EmuVerifyResourceIsRegistered(pThis);
 
 #ifndef D3D9
-    IDirect3DCubeTexture8 *pCubeTexture8 = pThis->EmuCubeTexture8;
+    IDirect3DCubeTexture8 *pCubeTexture = pThis->EmuCubeTexture8;
 #else
-    IDirect3DCubeTexture9 *pCubeTexture8 = pThis->EmuCubeTexture8;
+    IDirect3DCubeTexture9 *pCubeTexture = pThis->EmuCubeTexture8;
 #endif
 
-    HRESULT hRet = pCubeTexture8->LockRect(FaceType, Level, pLockedBox, pRect, Flags);
+    HRESULT hRet = pCubeTexture->LockRect(FaceType, Level, pLockedBox, pRect, Flags);
 
     EmuSwapFS();   // XBox FS
 
@@ -6740,13 +6740,13 @@ VOID WINAPI XTL::EmuIDirect3DDevice8_UpdateOverlay
 #ifndef D3D9
 			IDirect3DSurface8 *pBackBuffer=0;
 #else
-            IDirect3DSurface9 *pBackBuffer=0;
+			IDirect3DSurface9 *pBackBuffer=0;
 #endif
 
 #ifndef D3D9
 			HRESULT hRet = g_pD3DDevice->GetBackBuffer(0, D3DBACKBUFFER_TYPE_MONO, &pBackBuffer);
 #else
-            HRESULT hRet = g_pD3DDevice->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &pBackBuffer);
+			HRESULT hRet = g_pD3DDevice->GetBackBuffer(0, 0, D3DBACKBUFFER_TYPE_MONO, &pBackBuffer);
 #endif
 
 			// if we obtained the backbuffer, manually translate the YUY2 into the backbuffer format
@@ -8037,15 +8037,15 @@ VOID WINAPI XTL::EmuIDirect3DVertexBuffer8_Lock
            GetCurrentThreadId(), ppVertexBuffer, OffsetToLock, SizeToLock, ppbData, Flags);
 
 #ifndef D3D9
-    IDirect3DVertexBuffer8 *pVertexBuffer8 = ppVertexBuffer->EmuVertexBuffer8;
+    IDirect3DVertexBuffer8 *pVertexBuffer = ppVertexBuffer->EmuVertexBuffer8;
 #else
-    IDirect3DVertexBuffer9 *pVertexBuffer8 = ppVertexBuffer->EmuVertexBuffer8;
+    IDirect3DVertexBuffer9 *pVertexBuffer = ppVertexBuffer->EmuVertexBuffer8;
 #endif
 
 #ifndef D3D9
-    HRESULT hRet = pVertexBuffer8->Lock(OffsetToLock, SizeToLock, ppbData, Flags);
+    HRESULT hRet = pVertexBuffer->Lock(OffsetToLock, SizeToLock, ppbData, Flags);
 #else
-    HRESULT hRet = pVertexBuffer8->Lock(OffsetToLock, SizeToLock, (void**)ppbData, Flags);
+    HRESULT hRet = pVertexBuffer->Lock(OffsetToLock, SizeToLock, (void**)ppbData, Flags);
 #endif
 
     if(FAILED(hRet))
@@ -8075,17 +8075,17 @@ BYTE* WINAPI XTL::EmuIDirect3DVertexBuffer8_Lock2
            GetCurrentThreadId(), ppVertexBuffer, Flags);
 
 #ifndef D3D9
-    IDirect3DVertexBuffer8 *pVertexBuffer8 = ppVertexBuffer->EmuVertexBuffer8;
+    IDirect3DVertexBuffer8 *pVertexBuffer = ppVertexBuffer->EmuVertexBuffer8;
 #else
-    IDirect3DVertexBuffer9 *pVertexBuffer8 = ppVertexBuffer->EmuVertexBuffer8;
+    IDirect3DVertexBuffer9 *pVertexBuffer = ppVertexBuffer->EmuVertexBuffer8;
 #endif
 
     BYTE *pbData = NULL;
 
 #ifndef D3D9
-    HRESULT hRet = pVertexBuffer8->Lock(0, 0, &pbData, EmuXB2PC_D3DLock(Flags));    // Fixed flags check, Battlestar Galactica now displays graphics correctly
+    HRESULT hRet = pVertexBuffer->Lock(0, 0, &pbData, EmuXB2PC_D3DLock(Flags));    // Fixed flags check, Battlestar Galactica now displays graphics correctly
 #else
-    HRESULT hRet = pVertexBuffer8->Lock(0, 0, (void**)&pbData, EmuXB2PC_D3DLock(Flags));    // Fixed flags check, Battlestar Galactica now displays graphics correctly
+    HRESULT hRet = pVertexBuffer->Lock(0, 0, (void**)&pbData, EmuXB2PC_D3DLock(Flags));    // Fixed flags check, Battlestar Galactica now displays graphics correctly
 #endif
 
     EmuSwapFS();   // XBox FS
@@ -8160,17 +8160,17 @@ HRESULT WINAPI XTL::EmuIDirect3DDevice8_SetStreamSource
 //	}
 
 #ifndef D3D9
-    IDirect3DVertexBuffer8 *pVertexBuffer8 = NULL;
+    IDirect3DVertexBuffer8 *pVertexBuffer = NULL;
 #else
-    IDirect3DVertexBuffer9 *pVertexBuffer8 = NULL;
+    IDirect3DVertexBuffer9 *pVertexBuffer = NULL;
 #endif
 
     if(pStreamData != NULL)
     {
         EmuVerifyResourceIsRegistered(pStreamData);
 
-        pVertexBuffer8 = pStreamData->EmuVertexBuffer8;
-        pVertexBuffer8->Unlock();
+        pVertexBuffer = pStreamData->EmuVertexBuffer8;
+        pVertexBuffer->Unlock();
     }
 
     #ifdef _DEBUG_TRACK_VB
@@ -8181,9 +8181,9 @@ HRESULT WINAPI XTL::EmuIDirect3DDevice8_SetStreamSource
     #endif
 
 #ifndef D3D9
-    HRESULT hRet = g_pD3DDevice->SetStreamSource(StreamNumber, pVertexBuffer8, Stride);
+    HRESULT hRet = g_pD3DDevice->SetStreamSource(StreamNumber, pVertexBuffer, Stride);
 #else
-    HRESULT hRet = g_pD3DDevice->SetStreamSource(StreamNumber, pVertexBuffer8, 0, Stride);
+    HRESULT hRet = g_pD3DDevice->SetStreamSource(StreamNumber, pVertexBuffer, 0, Stride);
 #endif
 
     if(FAILED(hRet))
@@ -10052,7 +10052,7 @@ HRESULT WINAPI XTL::EmuIDirect3DDevice8_CreateStateBlock
 #ifndef D3D9
 	HRESULT hRet = g_pD3DDevice->CreateStateBlock( Type, pToken );
 #else
-    HRESULT hRet = g_pD3DDevice->CreateStateBlock( Type, (XTL::IDirect3DStateBlock9**) pToken );
+	HRESULT hRet = g_pD3DDevice->CreateStateBlock( Type, (XTL::IDirect3DStateBlock9**) pToken );
 #endif
 
 	if(FAILED(hRet))
@@ -10150,7 +10150,7 @@ HRESULT WINAPI XTL::EmuIDirect3DDevice8_GetProjectionViewportMatrix
 #ifndef D3D9
 	D3DVIEWPORT8 Viewport;
 #else
-    D3DVIEWPORT9 Viewport;
+	D3DVIEWPORT9 Viewport;
 #endif
 
 	// Get current viewport
@@ -10585,10 +10585,10 @@ HRESULT WINAPI XTL::EmuIDirect3DDevice8_DeleteStateBlock
 #ifndef D3D9
 	HRESULT hRet = g_pD3DDevice->DeleteStateBlock(Token);
 #else
-    // TODO: Implement D3D9 equivalent
-    // CreateStateBlock()
-    // d3dDevice->DeleteStateBlock(stateblockHandle) == stateblock->Release()
-    HRESULT hRet = E_FAIL; //g_pD3DDevice->DeleteStateBlock(Token);
+	// TODO: Implement D3D9 equivalent
+	// CreateStateBlock()
+	// d3dDevice->DeleteStateBlock(stateblockHandle) == stateblock->Release()
+	HRESULT hRet = E_FAIL; //g_pD3DDevice->DeleteStateBlock(Token);
 #endif
 
 	EmuSwapFS();	// Xbox FS
@@ -10754,7 +10754,7 @@ HRESULT WINAPI XTL::EmuIDirect3D8_GetAdapterIdentifier
 #ifndef D3D9
 	D3DADAPTER_IDENTIFIER8* pIdentifier
 #else
-    D3DADAPTER_IDENTIFIER9* pIdentifier
+	D3DADAPTER_IDENTIFIER9* pIdentifier
 #endif
 )
 {
@@ -11054,7 +11054,7 @@ XTL::X_D3DSurface* WINAPI XTL::EmuIDirect3DDevice8_GetPersistedSurface2()
 #ifndef D3D9
 	HRESULT hr = g_pD3DDevice->CreateImageSurface( 640, 480, D3DFMT_X8R8G8B8, &pSurface->EmuSurface8 );
 #else
-    HRESULT hr = g_pD3DDevice->CreateOffscreenPlainSurface( 640, 480, D3DFMT_X8R8G8B8, D3DPOOL_SCRATCH /*D3DPOOL_MANAGED*/, &pSurface->EmuSurface8, NULL );
+	HRESULT hr = g_pD3DDevice->CreateOffscreenPlainSurface( 640, 480, D3DFMT_X8R8G8B8, D3DPOOL_SCRATCH /*D3DPOOL_MANAGED*/, &pSurface->EmuSurface8, NULL );
 #endif
 	if( SUCCEEDED( hr ) )
 	{
@@ -11138,7 +11138,7 @@ HRESULT WINAPI XTL::EmuIDirect3DDevice8_GetScissors
 #ifndef D3D9
 	D3DVIEWPORT8 vp;
 #else
-    D3DVIEWPORT9 vp;
+	D3DVIEWPORT9 vp;
 #endif
 
 	g_pD3DDevice->GetViewport( &vp );

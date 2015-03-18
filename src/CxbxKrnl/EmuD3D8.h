@@ -1906,7 +1906,7 @@ HRESULT WINAPI EmuIDirect3D8_GetAdapterIdentifier
 #ifndef D3D9
 	D3DADAPTER_IDENTIFIER8* pIdentifier
 #else
-    D3DADAPTER_IDENTIFIER9* pIdentifier
+	D3DADAPTER_IDENTIFIER9* pIdentifier
 #endif
 );
 
