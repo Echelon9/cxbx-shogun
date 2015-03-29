@@ -82,7 +82,7 @@ static void EmuUnswizzleActiveTexture()
         return;
 
     // remove lock
-    pPixelContainer->EmuTexture8->UnlockRect(0);
+    pPixelContainer->EmuTexture->UnlockRect(0);
     pPixelContainer->Common &= ~X_D3DCOMMON_ISLOCKED;
 
     // TODO: potentially CRC to see if this surface was actually modified..
@@ -93,9 +93,9 @@ static void EmuUnswizzleActiveTexture()
 
     {
 #ifndef D3D9
-        XTL::IDirect3DTexture8 *pTexture = pPixelContainer->EmuTexture8;
+        XTL::IDirect3DTexture8 *pTexture = pPixelContainer->EmuTexture;
 #else
-        XTL::IDirect3DTexture9 *pTexture = pPixelContainer->EmuTexture8;
+        XTL::IDirect3DTexture9 *pTexture = pPixelContainer->EmuTexture;
 #endif
 
         DWORD dwLevelCount = pTexture->GetLevelCount();

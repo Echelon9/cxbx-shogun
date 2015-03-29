@@ -272,23 +272,23 @@ struct X_D3DResource
     {
         DWORD                    Lock;
 #ifndef D3D9
-        IDirect3DResource8      *EmuResource8;
-        IDirect3DBaseTexture8   *EmuBaseTexture8;
-        IDirect3DTexture8       *EmuTexture8;
-        IDirect3DVolumeTexture8 *EmuVolumeTexture8;
-        IDirect3DCubeTexture8   *EmuCubeTexture8;
-        IDirect3DSurface8       *EmuSurface8;
-        IDirect3DVertexBuffer8  *EmuVertexBuffer8;
-        IDirect3DIndexBuffer8   *EmuIndexBuffer8;
+        IDirect3DResource8      *EmuResource;
+        IDirect3DBaseTexture8   *EmuBaseTexture;
+        IDirect3DTexture8       *EmuTexture;
+        IDirect3DVolumeTexture8 *EmuVolumeTexture;
+        IDirect3DCubeTexture8   *EmuCubeTexture;
+        IDirect3DSurface8       *EmuSurface;
+        IDirect3DVertexBuffer8  *EmuVertexBuffer;
+        IDirect3DIndexBuffer8   *EmuIndexBuffer;
 #else
-        IDirect3DResource9      *EmuResource8;
-        IDirect3DBaseTexture9   *EmuBaseTexture8;
-        IDirect3DTexture9       *EmuTexture8;
-        IDirect3DVolumeTexture9 *EmuVolumeTexture8;
-        IDirect3DCubeTexture9   *EmuCubeTexture8;
-        IDirect3DSurface9       *EmuSurface8;
-        IDirect3DVertexBuffer9  *EmuVertexBuffer8;
-        IDirect3DIndexBuffer9   *EmuIndexBuffer8;
+        IDirect3DResource9      *EmuResource;
+        IDirect3DBaseTexture9   *EmuBaseTexture;
+        IDirect3DTexture9       *EmuTexture;
+        IDirect3DVolumeTexture9 *EmuVolumeTexture;
+        IDirect3DCubeTexture9   *EmuCubeTexture;
+        IDirect3DSurface9       *EmuSurface;
+        IDirect3DVertexBuffer9  *EmuVertexBuffer;
+        IDirect3DIndexBuffer9   *EmuIndexBuffer;
 #endif
     };
 };

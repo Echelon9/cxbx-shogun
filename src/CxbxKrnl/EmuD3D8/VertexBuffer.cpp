@@ -297,10 +297,10 @@ bool XTL::VertexPatcher::ApplyCachedStream(VertexPatchDesc *pPatchDesc,
 #endif
         if(!pOrigVertexBuffer)
 		{
-			/*if(!g_pVertexBuffer || !g_pVertexBuffer->EmuVertexBuffer8)
+			/*if(!g_pVertexBuffer || !g_pVertexBuffer->EmuVertexBuffer)
 				CxbxKrnlCleanup("Unable to retrieve original buffer (Stream := %d)", uiStream);
 			else
-				pOrigVertexBuffer = g_pVertexBuffer->EmuVertexBuffer8;*/
+				pOrigVertexBuffer = g_pVertexBuffer->EmuVertexBuffer;*/
 
 			if(pbFatalError)
 				*pbFatalError = true;
@@ -1480,7 +1480,7 @@ VOID XTL::EmuUpdateActiveTexture()
 
         X_D3DFORMAT X_Format = (X_D3DFORMAT)((pPixelContainer->Format & X_D3DFORMAT_FORMAT_MASK) >> X_D3DFORMAT_FORMAT_SHIFT);
 
-        if(X_Format != 0xCD && (pTexture->EmuResource8->GetType() == D3DRTYPE_TEXTURE))
+        if(X_Format != 0xCD && (pTexture->EmuResource->GetType() == D3DRTYPE_TEXTURE))
         {
             DWORD dwWidth, dwHeight, dwBPP, dwDepth = 1, dwPitch = 0, dwMipMapLevels = 1;
             BOOL  bSwizzled = FALSE, bCompressed = FALSE, dwCompressedSize = 0;
@@ -1590,7 +1590,7 @@ VOID XTL::EmuUpdateActiveTexture()
             {
                 D3DLOCKED_RECT LockedRect;
 
-                HRESULT hRet = pResource->EmuTexture8->LockRect(level, &LockedRect, NULL, 0);
+                HRESULT hRet = pResource->EmuTexture->LockRect(level, &LockedRect, NULL, 0);
 
                 RECT  iRect  = {0,0,0,0};
                 POINT iPoint = {0,0};
@@ -1647,7 +1647,7 @@ VOID XTL::EmuUpdateActiveTexture()
                     }
                 }
 
-                pResource->EmuTexture8->UnlockRect(level);
+                pResource->EmuTexture->UnlockRect(level);
 
                 dwMipOffs += dwMipWidth*dwMipHeight*dwBPP;
 
@@ -1657,7 +1657,7 @@ VOID XTL::EmuUpdateActiveTexture()
             }
         }
 
-        g_pD3DDevice->SetTexture(Stage, pTexture->EmuTexture8);
+        g_pD3DDevice->SetTexture(Stage, pTexture->EmuTexture);
         //*/
     }
 }
