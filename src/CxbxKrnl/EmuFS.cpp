@@ -48,13 +48,18 @@ namespace xboxkrnl
 #include <windows.h>
 #include <cstdio>
 
+// No LDT Hack flag (For 64-bit OSes)
+#define DISABLE_LDT
+
 // automatically insert after this many EmuFS() swaps
 uint32 EmuAutoSleepRate = -1;
 
 // initialize fs segment selector emulation
 void EmuInitFS()
 {
+//#ifndef DISABLE_LDT
     EmuInitLDT();
+//#endif
 }
 
 // generate fs segment selector
@@ -126,9 +131,12 @@ void EmuGenerateFS(Xbe::TLS *pTLS, void *pTLSData)
 
         memset(NewPcr, 0, sizeof(*NewPcr));
 
+#ifndef DISABLE_LDT
         NewFS = EmuAllocateLDT((uint32)NewPcr, (uint32)NewPcr + dwSize);
+#endif
     }
 
+#ifndef DISABLE_LDT
     // update "OrgFS" with NewFS and (bIsXboxFS = false)
     __asm
     {
@@ -138,9 +146,10 @@ void EmuGenerateFS(Xbe::TLS *pTLS, void *pTLSData)
         mov fs:[0x14], ax
         mov fs:[0x16], bh
     }
+#endif
 
     // generate TIB
-    {
+//  {
         xboxkrnl::ETHREAD *EThread = (xboxkrnl::ETHREAD*)CxbxMalloc(sizeof(xboxkrnl::ETHREAD));
 
         EThread->Tcb.TlsData  = (void*)pNewTLS;
@@ -153,7 +162,7 @@ void EmuGenerateFS(Xbe::TLS *pTLS, void *pTLSData)
         NewPcr->PrcbData.CurrentThread = (xboxkrnl::KTHREAD*)EThread;
 
         NewPcr->Prcb = &NewPcr->PrcbData;
-    }
+//  }
 
     // prepare TLS
     {
@@ -164,6 +173,91 @@ void EmuGenerateFS(Xbe::TLS *pTLS, void *pTLSData)
         if(pNewTLS != 0)
             *(void**)pNewTLS = pNewTLS;
     }
+
+#ifdef DISABLE_LDT
+    DWORD prcbdataoffset = (DWORD)&NewPcr->PrcbData;
+    DWORD ethreadoffset = (DWORD)&EThread;
+    DWORD newtls = (DWORD)pNewTLS;
+
+    __asm
+    {
+        pushad
+
+        mov eax, 00011000h
+        mov edi, 1FA2ACh
+        mov ecx, 1E92B2h
+
+    search_me:
+        // 64 a1 28 00
+        cmp dword ptr [eax], 0028a164h ; mov eax, large fs:28h
+        je fix_eax_fs28
+
+        // 64 a1 20 00
+        cmp dword ptr [eax], 0020a164h ; mov eax, large fs:20h
+        je fix_eax_fs20
+
+        // 64 8b 0d 04
+        cmp dword ptr [eax], 040d8b64h ; mov ecx, large fs:4
+        je fix_ecx_fs04
+
+        // 64 8b 3d 04
+        cmp dword ptr [eax], 043d8b64h ; mov edi, large fs:4
+        je fix_edi_fs04
+
+        // 64 0f b6 05
+        cmp dword ptr [eax], 05b60f64h ; movzx eax, large byte ptr fs:24h
+        je fix_eax_fs24
+
+        jmp cont111
+
+    fix_eax_fs28:
+        mov byte ptr [eax], 0B8h ; mov eax, {00000000}
+        mov ebx, EThread
+        mov dword ptr [eax+1], ebx
+        mov byte ptr [eax+5], 090h ; NOP
+        jmp cont111
+
+    fix_eax_fs20:
+        mov byte ptr [eax], 0B8h ; mov eax, {00000000}
+        mov ebx, prcbdataoffset
+        mov dword ptr [eax+1], ebx
+        mov byte ptr [eax+5], 090h ; NOP
+        jmp cont111
+
+    fix_ecx_fs04:
+        mov byte ptr [eax], 0B9h ; mov ecx, {00000000}
+        mov ebx, newtls
+        mov dword ptr [eax+1], ebx
+        mov byte ptr [eax+5], 090h ; NOP
+        mov byte ptr [eax+6], 090h ; NOP
+        jmp cont111
+
+    fix_edi_fs04:
+        mov byte ptr [eax], 066h   ; Put 66 bf, which means :
+        mov byte ptr [eax+1], 0BFh ; mov di, {0000}
+        mov ebx, newtls
+
+    // GUESSWORK FROM HERE ON :
+        mov dword ptr [eax+2], ebx
+        jmp cont111
+
+    fix_eax_fs24:
+        mov byte ptr [eax+0], 090h ; NOP
+        mov byte ptr [eax+1], 090h ; NOP
+        mov byte ptr [eax+2], 090h ; NOP
+        mov byte ptr [eax+3], 090h ; NOP
+        mov byte ptr [eax+4], 090h ; NOP
+        mov byte ptr [eax+5], 090h ; NOP
+        mov byte ptr [eax+6], 090h ; NOP
+        mov byte ptr [eax+7], 090h ; NOP
+        jmp cont111
+
+    cont111:
+        inc eax
+        cmp eax, edi ; Use ecx instead?
+        jne search_me
+	}
+#endif
 
     // swap into "NewFS"
     EmuSwapFS();
@@ -221,5 +315,7 @@ void EmuCleanupFS()
     if(pTLSData != 0)
         CxbxFree(pTLSData);
 
+//#ifndef DISABLE_LDT
     EmuDeallocateLDT(wSwapFS);
+//#endif
 }
