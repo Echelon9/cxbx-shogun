@@ -48,21 +48,10 @@ extern void EmuInitFS();
 // generate fs segment selector
 extern void EmuGenerateFS(Xbe::TLS *pTLS, void *pTLSData);
 
-// cleanup fs segment selector emulation
-extern void EmuCleanupFS();
-
 // is the current fs register the xbox emulation variety?
 static inline bool EmuIsXboxFS()
 {
-    unsigned char chk;
-
-    __asm
-    {
-        mov ah, fs:[0x16]
-        mov chk, ah
-    }
-
-    return (chk == 1);
+    return true;
 }
 
 //
@@ -89,12 +78,6 @@ static inline void EmuSwapFS()
     // because not all interceptions swap the FS register, and some
     // non-interception code uses it
     static uint32 dwInterceptionCount = 0;
-
-    __asm
-    {
-        mov ax, fs:[0x14]
-        mov fs, ax
-    }
 
     // every 'N' interceptions, perform various periodic services
     if(dwInterceptionCount++ >= EmuAutoSleepRate)

@@ -41,8 +41,8 @@ namespace xboxkrnl
 };
 
 #include "EmuFS.h"
-#include "EmuLDT.h"
 #include "EmuAlloc.h"
+#include "CxbxKrnl.h"
 
 #undef FIELD_OFFSET     // prevent macro redefinition warnings
 #include <windows.h>
@@ -51,10 +51,110 @@ namespace xboxkrnl
 // automatically insert after this many EmuFS() swaps
 uint32 EmuAutoSleepRate = -1;
 
+__declspec(naked) void EmuMEaxFs28()
+{
+	__asm
+	{
+		mov eax, fs : [0x14]
+		mov eax, [eax + 28h]
+		ret
+	}
+}
+
+__declspec(naked) void EmuMEaxFs20()
+{
+	__asm
+	{
+		mov eax, fs : [0x14]
+		mov eax, [eax + 20h]
+		ret
+	}
+}
+
+__declspec(naked) void EmuMEcxFs04()
+{
+	__asm
+	{
+		mov ecx, fs : [0x14]
+		mov ecx, [ecx + 04h]
+		ret
+	}
+}
+
+__declspec(naked) void EmuMEdiFs04()
+{
+	__asm
+	{
+		mov edi, fs : [0x14]
+		mov edi, [edi + 04h]
+		ret
+	}
+}
+
+__declspec(naked) void EmuMZEaxFs24()
+{
+	__asm
+	{
+		mov eax, fs : [0x14]
+		movzx eax, [eax + 24h]
+		ret
+	}
+}
+
 // initialize fs segment selector emulation
 void EmuInitFS()
 {
-    EmuInitLDT();
+	DWORD sizeOfImage = CxbxKrnl_XbeHeader->dwSizeofImage;
+	for (uint32 addr = CxbxKrnl_XbeHeader->dwBaseAddr; addr < sizeOfImage +	CxbxKrnl_XbeHeader->dwBaseAddr; addr++)
+	{
+		switch (*(uint32*)addr)
+		{
+		case 0x0028a164:
+			DbgPrintf("EmuFS: 0x%X = Found 'mov eax, large fs:28h'\n", addr);
+			// Call
+			*(uint08*)addr = 0xE8;
+			*(uint32*)(addr + 1) = (uint32)EmuMEaxFs28 - addr - 5;
+			// Ret
+			*(uint08*)(addr + 5) = 0x90;
+			break;
+		case 0x0020a164:
+			DbgPrintf("EmuFS: 0x%X = 'Found mov eax, large fs:20h'\n", addr);
+			// Call
+			*(uint08*)addr = 0xE8;
+			*(uint32*)(addr + 1) = (uint32)EmuMEaxFs20 - addr - 5;
+			// Ret
+			*(uint08*)(addr + 5) = 0x90;
+			break;
+		case 0x040d8b64:
+			DbgPrintf("EmuFS: 0x%X = 'Found mov ecx, large fs:4h'\n", addr);
+			// Call
+			*(uint08*)addr = 0xE8;
+			*(uint32*)(addr + 1) = (uint32)EmuMEcxFs04 - addr - 5;
+			// Ret
+			*(uint08*)(addr + 5) = 0x90;
+			*(uint08*)(addr + 6) = 0x90;
+			break;
+		case 0x043d8b64:
+			DbgPrintf("EmuFS: 0x%X = 'Found mov edi, large fs:4h'\n", addr);
+			// Call
+			*(uint08*)addr = 0xE8;
+			*(uint32*)(addr + 1) = (uint32)EmuMEdiFs04 - addr - 5;
+			// Ret
+			*(uint08*)(addr + 5) = 0x90;
+			*(uint08*)(addr + 6) = 0x90;
+			break;
+		case 0x05b60f64:
+			DbgPrintf("EmuFS: 0x%X = 'Found movzx eax, large byte ptr fs:24h'\n", addr);
+			// Call
+			*(uint08*)addr = 0xE8;
+			*(uint32*)(addr + 1) = (uint32)EmuMZEaxFs24 - addr - 5;
+			// Ret
+			*(uint08*)(addr + 5) = 0x90;
+			*(uint08*)(addr + 6) = 0x90;
+			*(uint08*)(addr + 7) = 0x90;
+			break;
+		}
+	}
 }
 
 // generate fs segment selector
@@ -118,42 +218,31 @@ void EmuGenerateFS(Xbe::TLS *pTLS, void *pTLSData)
         mov OrgNtTib, eax
     }
 
-    // allocate LDT entry
+    // allocate KPCR structure
     {
         uint32 dwSize = sizeof(xboxkrnl::KPCR);
 
         NewPcr = (xboxkrnl::KPCR*)CxbxMalloc(dwSize);
 
         memset(NewPcr, 0, sizeof(*NewPcr));
-
-        NewFS = EmuAllocateLDT((uint32)NewPcr, (uint32)NewPcr + dwSize);
-    }
-
-    // update "OrgFS" with NewFS and (bIsXboxFS = false)
-    __asm
-    {
-        mov ax, NewFS
-        mov bh, 0
-
-        mov fs:[0x14], ax
-        mov fs:[0x16], bh
     }
 
     // generate TIB
-    {
-        xboxkrnl::ETHREAD *EThread = (xboxkrnl::ETHREAD*)CxbxMalloc(sizeof(xboxkrnl::ETHREAD));
+    xboxkrnl::ETHREAD *EThread = (xboxkrnl::ETHREAD*)CxbxMalloc(sizeof(xboxkrnl::ETHREAD));
 
-        EThread->Tcb.TlsData  = (void*)pNewTLS;
-        EThread->UniqueThread = GetCurrentThreadId();
+    EThread->Tcb.TlsData  = (void*)pNewTLS;
+    EThread->UniqueThread = GetCurrentThreadId();
 
-        memcpy(&NewPcr->NtTib, OrgNtTib, sizeof(NT_TIB));
+    memcpy(&NewPcr->NtTib, OrgNtTib, sizeof(NT_TIB));
 
-        NewPcr->NtTib.Self = &NewPcr->NtTib;
+    NewPcr->NtTib.Self = &NewPcr->NtTib;
 
-        NewPcr->PrcbData.CurrentThread = (xboxkrnl::KTHREAD*)EThread;
+    NewPcr->PrcbData.CurrentThread = (xboxkrnl::KTHREAD*)EThread;
 
-        NewPcr->Prcb = &NewPcr->PrcbData;
-    }
+    NewPcr->Prcb = &NewPcr->PrcbData;
+
+    //  Set the stack base
+    NewPcr->NtTib.StackBase = pNewTLS;
 
     // prepare TLS
     {
@@ -165,61 +254,11 @@ void EmuGenerateFS(Xbe::TLS *pTLS, void *pTLSData)
             *(void**)pNewTLS = pNewTLS;
     }
 
-    // swap into "NewFS"
-    EmuSwapFS();
-
-    // update "NewFS" with OrgFS and (bIsXboxFS = true)
-    __asm
-    {
-        mov ax, OrgFS
-        mov bh, 1
-
-        mov fs:[0x14], ax
-        mov fs:[0x16], bh
+    // Store the new KPCR pointer in FS
+    __asm {
+        mov eax, NewPcr
+        mov fs : [0x14], eax
     }
-
-    // save "TLSPtr" inside NewFS.StackBase
-    __asm
-    {
-        mov eax, pNewTLS
-        mov fs:[0x04], eax
-    }
-
-    // swap back into the "OrgFS"
-    EmuSwapFS();
 
     DbgPrintf("EmuFS (0x%X): OrgFS=%d NewFS=%d pTLS=0x%.08X\n", GetCurrentThreadId(), OrgFS, NewFS, pTLS);
-}
-
-// cleanup fs segment selector emulation
-void EmuCleanupFS()
-{
-    uint16 wSwapFS = 0;
-
-    __asm
-    {
-        mov ax, fs:[0x14]   // FS.ArbitraryUserPointer
-        mov wSwapFS, ax
-    }
-
-    if(wSwapFS == 0)
-        return;
-
-    if(!EmuIsXboxFS())
-        EmuSwapFS();    // Xbox FS
-
-    uint08 *pTLSData = NULL;
-
-    __asm
-    {
-        mov eax, fs:[0x04]
-        mov pTLSData, eax
-    }
-
-    EmuSwapFS(); // Win2k/XP FS
-
-    if(pTLSData != 0)
-        CxbxFree(pTLSData);
-
-    EmuDeallocateLDT(wSwapFS);
 }

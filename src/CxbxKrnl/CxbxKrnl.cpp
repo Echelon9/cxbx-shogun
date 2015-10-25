@@ -394,16 +394,6 @@ extern "C" CXBXKRNL_API void CxbxKrnlInit
     }
 
     //
-    // initialize FS segment selector
-    //
-
-    {
-        EmuInitFS();
-
-        EmuGenerateFS(pTLS, pTLSData);
-    }
-
-    //
     // duplicate handle in order to retain Suspend/Resume thread rights from a remote thread
     //
 
@@ -426,6 +416,16 @@ extern "C" CXBXKRNL_API void CxbxKrnlInit
     XTL::EmuD3DInit(pXbeHeader, dwXbeHeaderSize);
 
     EmuHLEIntercept(pLibraryVersion, pXbeHeader);
+
+    //
+    // initialize FS segment selector
+    //
+
+    {
+        EmuInitFS();
+
+        EmuGenerateFS(pTLS, pTLSData);
+    }
 
     DbgPrintf("EmuMain (0x%X): Initial thread starting.\n", GetCurrentThreadId());
 
@@ -633,8 +633,6 @@ extern "C" CXBXKRNL_API void CxbxKrnlTerminateThread()
 {
     if(EmuIsXboxFS())
         EmuSwapFS();    // Win2k/XP FS
-
-    EmuCleanupFS();
 
     TerminateThread(GetCurrentThread(), 0);
 }

@@ -4164,8 +4164,6 @@ XBSYSAPI EXPORTNUM(258) VOID NTAPI xboxkrnl::PsTerminateSystemThread(IN NTSTATUS
 
 //    CxbxKrnlTerminateThread();
 
-    EmuCleanupFS();
-
     _endthreadex(ExitStatus);
     //ExitThread(ExitStatus);
 
