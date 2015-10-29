@@ -51,7 +51,7 @@ class Error
 
     protected:
         // protected constructor so this class must be inherited from
-        Error() : m_szError(0), m_bFatal(false) { }
+        Error() : m_bFatal(false), m_szError(0) { }
 
         // protected deconstructor
        ~Error() { delete[] m_szError; }
