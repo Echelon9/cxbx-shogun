@@ -33,11 +33,9 @@
 # ******************************************************************
 # *  File Authors: Aaron Robinson, Edgar Hucek
 # ******************************************************************
-CC	= g++
-CFLAGS  = -g -O2 -I../../src -I../../src/Common/Linux -I../..src/Linux
-OBJCOPY	= objcopy
-GCC295 = cpp0-2.95
-#LDFLAGS = -s -S -T ldscript.ld
+CC     ?= gcc
+CXX    ?= g++
+CFLAGS  = -g -O2 -Wall -I../../src -I../../src/Common/Linux -I../..src/Linux
 
 OBJECTS	= ../../src/Common/Error.o \
 	../../src/Common/Exe.o \
@@ -51,16 +49,16 @@ RESOURCES =
 all	: cxbe
 
 clean	:
-	rm -rf *.o *~ core *.core ${OBJECTS} ${RESOURCES}
-	rm -rf *.o *~ core *.core ${OBJECTS} ${RESOURCES} ../../bin/cxbe ../../bin/cxbe.exe
+	${RM} *.o *~ core *.core ${OBJECTS} ${RESOURCES}
+	${RM} *.o *~ core *.core ${OBJECTS} ${RESOURCES} cxbe
 
 cxbe : ${OBJECTS} ${RESOURCES}
-	${CC} -o ../../bin/$@ ${OBJECTS} ${RESOURCES} ${LDFLAGS-XBE}
+	${CXX} ${OBJECTS} ${RESOURCES} -o $@
 
 ### rules:
 
 %.o	: %.cpp
-	${CC} ${CFLAGS} -o $@ -c $<
+	${CXX} ${CFLAGS} -o $@ -c $<
 
 %.o	: %.c
 	${CC} ${CFLAGS} -o $@ -c $<
