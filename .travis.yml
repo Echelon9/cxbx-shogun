@@ -1,0 +1,10 @@
+language: cpp
+
+compiler:
+  - gcc
+  - clang
+
+env:
+  - TEST_DIR=build/gnu
+
+script: cd $TEST_DIR && make
