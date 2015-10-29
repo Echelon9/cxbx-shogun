@@ -48,6 +48,9 @@ build/win32/[Rr]elease*/
 Build/win32/ipch/
 Ankh.NoLoad
 
+#GCC
+build/gnu/cxbe
+
 #MonoDevelop
 *.pidb
 *.userprefs
